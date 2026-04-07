@@ -1,0 +1,61 @@
+memory:
+  auto_save: true
+  importance_threshold: 3
+  max_log_entries_per_day: 100
+  retention_days: 90
+  working_tier_max_chars: 5000
+  episodic_expiry_days: 90
+  pinned_min_importance: 10
+
+search:
+  query_expansion:
+    enabled: true
+  temporal_decay:
+    enabled: true
+    half_life_days: 30
+    evergreen_min_importance: 9
+  mmr:
+    enabled: true
+    lambda: 0.7
+
+session:
+  load_memory_on_start: true
+  save_memory_on_end: true
+  max_context_tokens: 100000
+  context_budget:
+    system_prompt: 0.10
+    daily_logs: 0.02
+    retrieved_memories: 0.02
+    history: 0.30
+    reserved_for_response: 0.05
+  end_of_session_summary: true
+  min_messages_for_summary: 4
+
+models:
+  chat:
+    provider: anthropic
+    model: claude-sonnet-4-6
+    max_tokens: 4096
+    temperature: 0.7
+  drafting:
+    provider: anthropic
+    model: claude-sonnet-4-6
+    max_tokens: 2048
+    temperature: 0.6
+  memory_extraction:
+    provider: anthropic
+    model: claude-haiku-4-5-20251001
+    max_tokens: 1024
+    temperature: 0.3
+
+cost_caps:
+  alerts:
+    per_run_usd: 3
+    per_day_usd: 8
+  hard_stop:
+    per_day_usd: 15
+
+output:
+  verbose: false
+  show_timestamps: true
+  format: markdown

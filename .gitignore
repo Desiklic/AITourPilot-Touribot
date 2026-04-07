@@ -1,0 +1,37 @@
+# Secrets
+.env
+
+# Data files (local only)
+data/
+output/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Sentence transformers cache
+.cache/
+
+# Logs and auto-generated topic files (runtime)
+memory/logs/
+memory/leads.md
+memory/emails.md
+memory/campaign.md
+memory/product.md
+memory/museums.md

@@ -1,8 +1,8 @@
+import { getMuseums } from '@/lib/db/leads-db';
+import { PipelinePageClient } from '@/components/pipeline/pipeline-page-client';
+import type { MuseumListItem } from '@/lib/types';
+
 export default function PipelinePage() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Pipeline</h1>
-      <p className="text-muted-foreground">Museum CRM pipeline — coming in Phase D2.</p>
-    </div>
-  );
+  const museums = getMuseums() as MuseumListItem[];
+  return <PipelinePageClient initialMuseums={museums} />;
 }

@@ -95,3 +95,10 @@ export interface MuseumDetail extends Museum {
   interactions: Interaction[];
   research: Research[];
 }
+
+// Museum list item returned by /api/leads (Museum + joined fields)
+export interface MuseumListItem extends Museum {
+  primary_contact_name: string | null;
+  primary_contact_email: string | null;
+  last_activity: string | null;
+}

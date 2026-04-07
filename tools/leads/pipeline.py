@@ -33,6 +33,10 @@ def pipeline_summary_text() -> str:
         stale_names = [f"{s['name']} ({s['days_idle']}d)" for s in stale[:3]]
         parts.append(f"Stale: {', '.join(stale_names)}")
 
+    followups = get_due_followups()
+    if followups:
+        parts.append(f"Follow-ups due today: {len(followups)}")
+
     return ". ".join(parts)
 
 
@@ -118,6 +122,17 @@ def show_status():
     if stats["by_source"]:
         sources = ", ".join(f"{k}: {v}" for k, v in stats["by_source"].items())
         console.print(f"  Sources: {sources}")
+
+    # Follow-ups due
+    followups = get_due_followups()
+    if followups:
+        console.print(f"\n[bold red]Follow-ups Due Today ({len(followups)})[/bold red]")
+        for f in followups:
+            stage_name = STAGE_NAMES.get(f["stage"], "?")
+            action = f.get("follow_up_action") or "follow up"
+            console.print(f"  [red]![/red] {f['museum_name']} (Stage {f['stage']}, {stage_name}) — {action} [dim](due {f['follow_up_date']})[/dim]")
+    else:
+        console.print("\n[green]No follow-ups due today[/green]")
 
     # Stale contacts
     stale = get_stale_museums(days=5)

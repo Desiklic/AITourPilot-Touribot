@@ -1,0 +1,97 @@
+// Pipeline stage type
+export type PipelineStage = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+
+export interface Museum {
+  id: number;
+  name: string;
+  city: string | null;
+  country: string | null;
+  country_code: string | null;
+  website: string | null;
+  annual_visitors: number | null;
+  current_audioguide: string | null;
+  digital_maturity: 'high' | 'medium' | 'low' | null;
+  tier: 1 | 2 | 3;
+  source: string | null;
+  source_detail: string | null;
+  stage: PipelineStage;
+  stage_updated_at: string | null;
+  score: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Contact {
+  id: number;
+  museum_id: number;
+  first_name: string | null;
+  last_name: string | null;
+  full_name: string;
+  role: string | null;
+  email: string | null;
+  linkedin_url: string | null;
+  preferred_language: string;
+  notes: string | null;
+  is_primary: 0 | 1;
+  created_at: string;
+}
+
+export interface Interaction {
+  id: number;
+  museum_id: number;
+  contact_id: number | null;
+  direction: 'outbound' | 'inbound';
+  channel: 'email' | 'linkedin' | 'phone' | string;
+  subject: string | null;
+  body: string;
+  sequence_step: number | null;
+  response_score: number | null;
+  sent_at: string | null;
+  created_at: string;
+  is_draft: 0 | 1;
+  event_type: string | null;
+  attachments: string | null;
+  outcome: string | null;
+  follow_up_date: string | null;
+  follow_up_action: string | null;
+}
+
+export interface Research {
+  id: number;
+  museum_id: number;
+  insights: string | null;
+  hypothesis: string | null;
+  hook_line: string | null;
+  conversation_starter: string | null;
+  sources: string | null;
+  created_at: string;
+  is_current: 0 | 1;
+}
+
+export interface Memory {
+  id: number;
+  content: string;
+  type: string;
+  importance: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PipelineStats {
+  total_museums: number;
+  by_stage: Record<PipelineStage, number>;
+  awaiting_reply: number;
+  stale_count: number;
+  follow_ups_due: number;
+  demos_this_week: number;
+  closed_won: number;
+  avg_days_to_respond: number | null;
+}
+
+// Museum with related data for detail views
+export interface MuseumDetail extends Museum {
+  contacts: Contact[];
+  interactions: Interaction[];
+  research: Research[];
+}

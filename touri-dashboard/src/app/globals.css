@@ -1,0 +1,406 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+}
+
+/* Dark theme as default - TouriBot Control Center */
+:root {
+  --radius: 0.625rem;
+  --background: #0f0f23;
+  --foreground: #e2e8f0;
+  --card: #1a1a2e;
+  --card-foreground: #e2e8f0;
+  --popover: #1a1a2e;
+  --popover-foreground: #e2e8f0;
+  --primary: #b07d56;
+  --primary-foreground: #ffffff;
+  --secondary: #1e1e3a;
+  --secondary-foreground: #e2e8f0;
+  --muted: #1e1e3a;
+  --muted-foreground: #94a3b8;
+  --accent: #252547;
+  --accent-foreground: #e2e8f0;
+  --destructive: #ef4444;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: #b07d56;
+  --chart-1: #b07d56;
+  --chart-2: #22c55e;
+  --chart-3: #f59e0b;
+  --chart-4: #3b82f6;
+  --chart-5: #ef4444;
+  --sidebar: #0a0a1a;
+  --sidebar-foreground: #94a3b8;
+  --sidebar-primary: #b07d56;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1a1a2e;
+  --sidebar-accent-foreground: #e2e8f0;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-ring: #b07d56;
+}
+
+/* Light theme overrides */
+.light {
+  --background: #f8f7f4;
+  --foreground: #2d2520;
+  --card: #fefdfb;
+  --card-foreground: #2d2520;
+  --popover: #fefdfb;
+  --popover-foreground: #2d2520;
+  --primary: #b07d56;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f0eb;
+  --secondary-foreground: #2d2520;
+  --muted: #e8e4dd;
+  --muted-foreground: #6b6460;
+  --accent: #f0ebe4;
+  --accent-foreground: #2d2520;
+  --destructive: #dc2626;
+  --border: rgba(0, 0, 0, 0.12);
+  --input: rgba(0, 0, 0, 0.08);
+  --ring: #b07d56;
+  --chart-1: #b07d56;
+  --chart-2: #15803d;
+  --chart-3: #d97706;
+  --chart-4: #1d4ed8;
+  --chart-5: #dc2626;
+  --sidebar: #f3f0eb;
+  --sidebar-foreground: #6b6460;
+  --sidebar-primary: #b07d56;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8e4dd;
+  --sidebar-accent-foreground: #2d2520;
+  --sidebar-border: rgba(0, 0, 0, 0.08);
+  --sidebar-ring: #b07d56;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+  opacity: 0.4;
+}
+
+/* Always-visible horizontal scrollbar for board */
+.scrollbar-thin {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted-foreground) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  height: 8px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: var(--muted);
+  border-radius: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: 4px;
+  opacity: 0.5;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground);
+  opacity: 0.4;
+}
+
+/* ============================================================
+   Syntax highlighting theme variables
+   ============================================================ */
+
+/* Dark mode (default) */
+:root {
+  --hljs-bg: #1a1b26;
+  --hljs-fg: #a9b1d6;
+  --hljs-comment: #565f89;
+  --hljs-keyword: #bb9af7;
+  --hljs-string: #9ece6a;
+  --hljs-number: #ff9e64;
+  --hljs-function: #7aa2f7;
+  --hljs-variable: #c0caf5;
+  --hljs-type: #2ac3de;
+  --hljs-built-in: #e0af68;
+}
+
+/* Light mode overrides */
+.light {
+  --hljs-bg: #ffffff;
+  --hljs-fg: #24292e;
+  --hljs-comment: #6a737d;
+  --hljs-keyword: #d73a49;
+  --hljs-string: #032f62;
+  --hljs-number: #005cc5;
+  --hljs-function: #6f42c1;
+  --hljs-variable: #24292e;
+  --hljs-type: #22863a;
+  --hljs-built-in: #e36209;
+}
+
+/* Apply highlight.js theme via CSS variables */
+.hljs { background: var(--hljs-bg) !important; color: var(--hljs-fg); }
+.hljs-comment, .hljs-quote { color: var(--hljs-comment); font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-meta .hljs-keyword { color: var(--hljs-keyword); }
+.hljs-string, .hljs-doctag, .hljs-template-variable, .hljs-regexp { color: var(--hljs-string); }
+.hljs-number, .hljs-literal, .hljs-symbol, .hljs-bullet { color: var(--hljs-number); }
+.hljs-title, .hljs-title\.function_, .hljs-section { color: var(--hljs-function); }
+.hljs-variable, .hljs-attr, .hljs-params, .hljs-property { color: var(--hljs-variable); }
+.hljs-type, .hljs-class .hljs-title, .hljs-selector-class, .hljs-selector-id { color: var(--hljs-type); }
+.hljs-built_in, .hljs-builtin-name { color: var(--hljs-built-in); }
+.hljs-meta, .hljs-meta .hljs-string { color: var(--hljs-comment); }
+.hljs-addition { color: var(--hljs-string); background: rgba(158, 206, 106, 0.1); }
+.hljs-deletion { color: var(--hljs-keyword); background: rgba(187, 154, 247, 0.1); }
+.hljs-operator, .hljs-punctuation { color: var(--hljs-fg); opacity: 0.8; }
+.hljs-name, .hljs-tag { color: var(--hljs-keyword); }
+.hljs-selector-attr, .hljs-selector-pseudo { color: var(--hljs-type); }
+
+/* ============================================================
+   Markdown body — prose styles scoped to .markdown-body
+   ============================================================ */
+
+.markdown-body {
+  color: var(--foreground);
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+.markdown-body > :first-child { margin-top: 0; }
+.markdown-body > :last-child { margin-bottom: 0; }
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  color: var(--foreground);
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+}
+.markdown-body h1 { font-size: 1.4em; }
+.markdown-body h2 { font-size: 1.2em; }
+.markdown-body h3 { font-size: 1.05em; }
+.markdown-body h4 { font-size: 0.95em; }
+.markdown-body h5 { font-size: 0.9em; }
+.markdown-body h6 { font-size: 0.85em; color: var(--muted-foreground); }
+
+.markdown-body p {
+  margin-bottom: 0.75em;
+  line-height: 1.7;
+}
+.markdown-body p:last-child { margin-bottom: 0; }
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.5em;
+  margin-bottom: 0.75em;
+}
+.markdown-body ul { list-style-type: disc; }
+.markdown-body ol { list-style-type: decimal; }
+.markdown-body ul ul { list-style-type: circle; }
+.markdown-body ul ul ul { list-style-type: square; }
+
+.markdown-body li {
+  margin-bottom: 0.25em;
+  line-height: 1.6;
+}
+
+/* Task list checkboxes */
+.markdown-body input[type="checkbox"] {
+  margin-right: 0.4em;
+  accent-color: var(--primary);
+}
+
+.markdown-body blockquote {
+  border-left: 3px solid var(--primary);
+  background: rgba(124, 58, 237, 0.06);
+  margin: 0.75em 0;
+  padding: 0.5em 1em;
+  border-radius: 0 6px 6px 0;
+  font-style: italic;
+  color: var(--muted-foreground);
+}
+.markdown-body blockquote > :first-child { margin-top: 0; }
+.markdown-body blockquote > :last-child { margin-bottom: 0; }
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1em 0;
+}
+
+.markdown-body a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.markdown-body a:hover { opacity: 0.8; }
+
+.markdown-body strong { font-weight: 600; color: inherit; }
+.markdown-body em { font-style: italic; }
+.markdown-body del { text-decoration: line-through; color: var(--muted-foreground); }
+
+/* ============================================================
+   Code block (fenced) styles
+   ============================================================ */
+
+.code-block-wrapper {
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 0.75em 0;
+  border: 1px solid var(--border);
+}
+
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: var(--hljs-bg);
+  background: color-mix(in srgb, var(--hljs-bg) 90%, white 10%);
+  border-bottom: 1px solid var(--border);
+}
+
+.code-block-wrapper pre {
+  margin: 0;
+  padding: 1em;
+  overflow-x: auto;
+  background: var(--hljs-bg) !important;
+}
+
+.code-block-wrapper pre code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.82em;
+  line-height: 1.6;
+  background: transparent !important;
+  padding: 0;
+}
+
+/* ============================================================
+   Inline code styles
+   ============================================================ */
+
+.inline-code,
+.markdown-body :not(pre) > code {
+  background: var(--muted);
+  color: var(--foreground);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.85em;
+  border: 1px solid var(--border);
+}
+
+/* ============================================================
+   Table styles
+   ============================================================ */
+
+.markdown-body table,
+.markdown-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875em;
+}
+
+.markdown-body th,
+.markdown-table th {
+  font-weight: 600;
+  background: var(--muted);
+  padding: 0.5em 0.75em;
+  border-bottom: 2px solid var(--border);
+  text-align: left;
+  color: var(--foreground);
+}
+
+.markdown-body td,
+.markdown-table td {
+  padding: 0.45em 0.75em;
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+}
+
+.markdown-body tr:last-child td,
+.markdown-table tr:last-child td { border-bottom: none; }
+
+.markdown-body tr:hover td,
+.markdown-table tr:hover td { background: var(--muted); }
+
+/* ============================================================
+   Streaming cursor — appended via CSS ::after pseudo-element
+   ============================================================ */
+
+.markdown-body.streaming-cursor > :last-child:not(:has(*))::after,
+.markdown-body.streaming-cursor > :last-child > :last-child::after {
+  content: '\258c';
+  color: var(--primary);
+  animation: cursor-blink 1s step-end infinite;
+  margin-left: 2px;
+}
+
+@keyframes cursor-blink {
+  50% { opacity: 0; }
+}

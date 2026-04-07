@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
-import type { Museum, Contact, Interaction, Research } from '@/lib/types';
+import type { Museum, Contact, Interaction, Research, CalendarEvent, FollowUpTask } from '@/lib/types';
 import { PIPELINE_STAGES } from '@/lib/constants';
 
 const TOURIBOT_HOME = process.env.TOURIBOT_HOME;
@@ -158,6 +158,97 @@ export function getInteractionHistory(museumId: number): InteractionRow[] {
     ORDER BY i.created_at DESC
   `);
   return stmt.all(museumId) as InteractionRow[];
+}
+
+// ─── Calendar ────────────────────────────────────────────────────────────────
+
+interface CalendarInteractionRow {
+  id: number;
+  museum_id: number;
+  museum_name: string;
+  follow_up_date: string;
+  follow_up_action: string | null;
+  event_type: string | null;
+  created_at: string;
+  stage: number;
+}
+
+interface DemoMuseumRow {
+  museum_id: number;
+  museum_name: string;
+  stage: number;
+  stage_updated_at: string | null;
+}
+
+export function getCalendarEvents(startDate: string, endDate: string): CalendarEvent[] {
+  const database = getDb();
+
+  // Follow-up events from interactions
+  const followUpStmt = database.prepare<[string, string]>(`
+    SELECT i.id, i.museum_id, m.name as museum_name, i.follow_up_date,
+           i.follow_up_action, i.event_type, i.created_at, m.stage
+    FROM interactions i
+    JOIN museums m ON m.id = i.museum_id
+    WHERE i.follow_up_date IS NOT NULL
+      AND i.follow_up_date >= ? AND i.follow_up_date <= ?
+    ORDER BY i.follow_up_date ASC
+  `);
+  const followUpRows = followUpStmt.all(startDate, endDate) as CalendarInteractionRow[];
+
+  const followUpEvents: CalendarEvent[] = followUpRows.map((row) => ({
+    id: row.id,
+    museum_id: row.museum_id,
+    museum_name: row.museum_name,
+    follow_up_date: row.follow_up_date,
+    follow_up_action: row.follow_up_action,
+    event_type: row.event_type,
+    stage: row.stage,
+    type: 'follow_up' as const,
+  }));
+
+  // Demo events: museums at stage 6 (Demo Scheduled)
+  const demoStmt = database.prepare<[], DemoMuseumRow>(`
+    SELECT m.id as museum_id, m.name as museum_name, m.stage, m.stage_updated_at
+    FROM museums m WHERE m.stage = 6
+  `);
+  const demoRows = demoStmt.all() as DemoMuseumRow[];
+
+  // Use stage_updated_at as the demo date (fallback to today if null)
+  const today = new Date().toISOString().slice(0, 10);
+  const demoEvents: CalendarEvent[] = demoRows
+    .filter((row) => {
+      const demoDate = row.stage_updated_at ? row.stage_updated_at.slice(0, 10) : today;
+      return demoDate >= startDate && demoDate <= endDate;
+    })
+    .map((row, idx) => ({
+      id: -(row.museum_id * 1000 + idx), // synthetic negative id to avoid collisions
+      museum_id: row.museum_id,
+      museum_name: row.museum_name,
+      follow_up_date: row.stage_updated_at ? row.stage_updated_at.slice(0, 10) : today,
+      follow_up_action: 'Demo Scheduled',
+      event_type: 'demo',
+      stage: row.stage,
+      type: 'demo' as const,
+    }));
+
+  return [...followUpEvents, ...demoEvents].sort((a, b) =>
+    a.follow_up_date.localeCompare(b.follow_up_date)
+  );
+}
+
+// ─── Follow-ups ──────────────────────────────────────────────────────────────
+
+export function getFollowUps(): FollowUpTask[] {
+  const database = getDb();
+  const stmt = database.prepare<[], FollowUpTask>(`
+    SELECT i.id, i.museum_id, m.name as museum_name, i.follow_up_date,
+           i.follow_up_action, i.event_type, i.outcome, m.stage, m.city, m.country
+    FROM interactions i
+    JOIN museums m ON m.id = i.museum_id
+    WHERE i.follow_up_date IS NOT NULL
+    ORDER BY i.follow_up_date ASC
+  `);
+  return stmt.all() as FollowUpTask[];
 }
 
 // ─── Stats ───────────────────────────────────────────────────────────────────

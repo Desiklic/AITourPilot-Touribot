@@ -102,3 +102,29 @@ export interface MuseumListItem extends Museum {
   primary_contact_email: string | null;
   last_activity: string | null;
 }
+
+// Calendar event (follow-up or demo)
+export interface CalendarEvent {
+  id: number;
+  museum_id: number;
+  museum_name: string;
+  follow_up_date: string;
+  follow_up_action: string | null;
+  event_type: string | null;
+  stage: number;
+  type: 'follow_up' | 'demo'; // derived
+}
+
+// Follow-up task for the task board
+export interface FollowUpTask {
+  id: number;
+  museum_id: number;
+  museum_name: string;
+  follow_up_date: string;
+  follow_up_action: string | null;
+  event_type: string | null;
+  outcome: string | null;
+  stage: number;
+  city: string | null;
+  country: string | null;
+}

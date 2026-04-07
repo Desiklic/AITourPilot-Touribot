@@ -308,18 +308,20 @@ def add_interaction(museum_id: int, direction: str, channel: str,
     """Log an interaction (email sent, reply received, meeting, note, etc.)."""
     conn = init_db()
     cursor = conn.cursor()
+    created_at = kwargs.get("created_at") or datetime.now().isoformat()
     cursor.execute(
         """INSERT INTO interactions (museum_id, contact_id, direction, channel,
            subject, body, sequence_step, response_score, sent_at, is_draft,
-           event_type, attachments, outcome, follow_up_date, follow_up_action)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+           event_type, attachments, outcome, follow_up_date, follow_up_action,
+           created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (museum_id, kwargs.get("contact_id"), direction, channel,
          kwargs.get("subject"), body, kwargs.get("sequence_step"),
          kwargs.get("response_score"), kwargs.get("sent_at"),
          kwargs.get("is_draft", 1),
          kwargs.get("event_type"), kwargs.get("attachments"),
          kwargs.get("outcome"), kwargs.get("follow_up_date"),
-         kwargs.get("follow_up_action")),
+         kwargs.get("follow_up_action"), created_at),
     )
     conn.commit()
     interaction_id = cursor.lastrowid

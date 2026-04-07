@@ -153,8 +153,7 @@ def draft_email(museum_name: str, contact_name: str = "",
 
     client = anthropic.Anthropic(api_key=api_key)
 
-    # Save draft BEFORE displaying (safety invariant: never lose work)
-    # We'll collect the full response first, save, then display
+    # Collect full response, then save to disk (safety invariant: never lose work)
     draft_text = ""
 
     if stream:

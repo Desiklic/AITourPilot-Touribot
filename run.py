@@ -15,6 +15,7 @@ Usage:
     python run.py update-lead "<museum>" --stage N  # Update pipeline stage
     python run.py log-email "<museum>"              # Mark email as sent
     python run.py import-leads <csv> --source X     # Bulk import (hubspot|mailerlite)
+    python run.py history "<museum>"                # Full interaction timeline
     python run.py recall "<query>"                  # Search memory
     python run.py remember "<fact>"                 # Save a fact to memory
     python run.py ingest                            # Process knowledge base
@@ -340,6 +341,19 @@ def cmd_import_leads(args: list[str]):
         console.print(f"[red]Error:[/red] {e}")
 
 
+def cmd_history(args: list[str]):
+    """Show full interaction timeline for a museum."""
+    from tools.leads.pipeline import show_history
+
+    museum_name = " ".join(args) if args else ""
+    if not museum_name:
+        from rich.console import Console
+        Console().print("[red]Usage:[/red] python run.py history \"Museum Name\"")
+        return
+
+    show_history(museum_name)
+
+
 def cmd_ingest():
     """Process knowledge base from source documents."""
     from tools.knowledge.ingest import run_ingest
@@ -380,6 +394,8 @@ def main():
         cmd_log_email(sys.argv[2:])
     elif command in ("import-leads", "import_leads"):
         cmd_import_leads(sys.argv[2:])
+    elif command == "history":
+        cmd_history(sys.argv[2:])
     elif command == "recall":
         if len(sys.argv) < 3:
             print("Usage: python run.py recall \"<query>\"")
@@ -396,7 +412,7 @@ def main():
         print(f"Unknown command: {command}")
         print("Available: chat, draft, log-response, pipeline, status,")
         print("          add-lead, update-lead, log-email, import-leads,")
-        print("          recall, remember, ingest")
+        print("          history, recall, remember, ingest")
         sys.exit(1)
 
 

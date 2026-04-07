@@ -8,7 +8,8 @@ from rich.panel import Panel
 
 from tools.leads.lead_db import (
     STAGE_NAMES, list_museums, get_pipeline_stats, get_stale_museums,
-    get_contacts, get_last_interaction,
+    get_contacts, get_last_interaction, get_museum, get_interaction_history,
+    get_due_followups,
 )
 
 console = Console()
@@ -173,3 +174,92 @@ def next_actions() -> list[str]:
             actions.append("Start researching Stage 0 leads to build pipeline momentum")
 
     return actions
+
+
+# ── Event type display labels ──────────────────────────────
+
+_EVENT_ICONS = {
+    "email_sent": "📤",
+    "email_received": "📥",
+    "meeting_scheduled": "📅",
+    "meeting_held": "🤝",
+    "meeting_noshow": "❌",
+    "linkedin_connection": "🔗",
+    "linkedin_message": "💬",
+    "phone_call": "📞",
+    "referral": "🔀",
+    "note": "📝",
+    "prep": "📋",
+}
+
+
+def show_history(museum_name: str):
+    """Display full chronological interaction timeline for a museum."""
+    museum = get_museum(museum_name)
+    if not museum:
+        console.print(f"[red]Museum not found:[/red] {museum_name}")
+        return
+
+    contacts = get_contacts(museum["id"])
+    history = get_interaction_history(museum["id"])
+
+    # Header
+    stage = museum["stage"]
+    stage_label = f"Stage {stage}: {STAGE_NAMES.get(stage, '?')}"
+    console.print()
+    console.print(Panel(
+        f"[bold]{museum['name']}[/bold]\n"
+        f"{museum.get('city') or ''} {museum.get('country') or ''}  |  {stage_label}  |  Source: {museum.get('source', '?')}"
+        + (f"\nSource detail: {museum['source_detail']}" if museum.get('source_detail') else ""),
+        border_style="cyan",
+    ))
+
+    # Contacts
+    if contacts:
+        console.print("[bold]Contacts:[/bold]")
+        for c in contacts:
+            primary = " [yellow](primary)[/yellow]" if c.get("is_primary") else ""
+            role = f" — {c['role']}" if c.get("role") else ""
+            email = f" ({c['email']})" if c.get("email") else ""
+            console.print(f"  {c['full_name']}{role}{email}{primary}")
+        console.print()
+
+    # Timeline
+    if not history:
+        console.print("[dim]No interactions recorded yet.[/dim]\n")
+        return
+
+    console.print("[bold]Timeline:[/bold]\n")
+    for event in history:
+        ts = (event.get("created_at") or "")[:16].replace("T", " ")
+        event_type = event.get("event_type") or event.get("channel") or "?"
+        icon = _EVENT_ICONS.get(event_type, "•")
+        direction = event.get("direction", "")
+
+        # Build the display label
+        if event_type in _EVENT_ICONS:
+            label = event_type.replace("_", " ").upper()
+        else:
+            label = f"{direction.upper()} ({event.get('channel', '?')})"
+
+        body = (event.get("body") or "").strip()
+        # Truncate long bodies for display
+        if len(body) > 200:
+            body = body[:200] + "..."
+
+        console.print(f"  [dim]{ts}[/dim]  {icon} [bold]{label}[/bold]")
+        if body:
+            # Indent body lines
+            for line in body.split("\n")[:5]:
+                console.print(f"    {line}")
+
+        if event.get("outcome"):
+            console.print(f"    [green]Outcome:[/green] {event['outcome']}")
+        if event.get("follow_up_date"):
+            console.print(f"    [yellow]Follow-up {event['follow_up_date']}:[/yellow] {event.get('follow_up_action', '')}")
+        if event.get("attachments"):
+            console.print(f"    [dim]Attachments: {event['attachments']}[/dim]")
+
+        console.print()
+
+    console.print(f"[dim]{len(history)} events total[/dim]\n")

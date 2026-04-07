@@ -91,6 +91,10 @@ def init_db() -> sqlite3.Connection:
         )
     """)
 
+    # ── Schema migrations (idempotent ALTER TABLE for existing DBs) ──
+    _migrate_interactions(conn)
+    _migrate_museums(conn)
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS research (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -109,6 +113,30 @@ def init_db() -> sqlite3.Connection:
     return conn
 
 
+def _migrate_interactions(conn: sqlite3.Connection):
+    """Add CRM fields to interactions table if missing."""
+    existing = {r[1] for r in conn.execute("PRAGMA table_info(interactions)").fetchall()}
+    migrations = [
+        ("event_type", "TEXT"),           # email_sent, meeting_scheduled, meeting_noshow, etc.
+        ("attachments", "TEXT"),           # JSON array of file paths
+        ("outcome", "TEXT"),              # What happened as a result
+        ("follow_up_date", "TEXT"),       # ISO date: when to follow up
+        ("follow_up_action", "TEXT"),     # What to do on follow-up
+    ]
+    for col, col_type in migrations:
+        if col not in existing:
+            conn.execute(f"ALTER TABLE interactions ADD COLUMN {col} {col_type}")
+    conn.commit()
+
+
+def _migrate_museums(conn: sqlite3.Connection):
+    """Add source_detail field to museums table if missing."""
+    existing = {r[1] for r in conn.execute("PRAGMA table_info(museums)").fetchall()}
+    if "source_detail" not in existing:
+        conn.execute("ALTER TABLE museums ADD COLUMN source_detail TEXT")
+        conn.commit()
+
+
 # ── Museum CRUD ────────────────────────────────────────────
 
 
@@ -121,13 +149,14 @@ def add_museum(name: str, city: str = None, country: str = None,
     cursor.execute(
         """INSERT INTO museums (name, city, country, country_code, website,
            annual_visitors, current_audioguide, digital_maturity, tier,
-           source, stage, stage_updated_at, notes, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)""",
+           source, stage, stage_updated_at, notes, source_detail,
+           created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)""",
         (name, city, country, kwargs.get("country_code"),
          kwargs.get("website"), kwargs.get("annual_visitors"),
          kwargs.get("current_audioguide"), kwargs.get("digital_maturity"),
          kwargs.get("tier", 2), source, now, kwargs.get("notes"),
-         now, now),
+         kwargs.get("source_detail"), now, now),
     )
     conn.commit()
     museum_id = cursor.lastrowid
@@ -276,17 +305,21 @@ def find_contact_by_email(email: str) -> dict | None:
 
 def add_interaction(museum_id: int, direction: str, channel: str,
                     body: str, **kwargs) -> dict:
-    """Log an interaction (email sent, reply received, etc.)."""
+    """Log an interaction (email sent, reply received, meeting, note, etc.)."""
     conn = init_db()
     cursor = conn.cursor()
     cursor.execute(
         """INSERT INTO interactions (museum_id, contact_id, direction, channel,
-           subject, body, sequence_step, response_score, sent_at, is_draft)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+           subject, body, sequence_step, response_score, sent_at, is_draft,
+           event_type, attachments, outcome, follow_up_date, follow_up_action)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (museum_id, kwargs.get("contact_id"), direction, channel,
          kwargs.get("subject"), body, kwargs.get("sequence_step"),
          kwargs.get("response_score"), kwargs.get("sent_at"),
-         kwargs.get("is_draft", 1)),
+         kwargs.get("is_draft", 1),
+         kwargs.get("event_type"), kwargs.get("attachments"),
+         kwargs.get("outcome"), kwargs.get("follow_up_date"),
+         kwargs.get("follow_up_action")),
     )
     conn.commit()
     interaction_id = cursor.lastrowid
@@ -438,6 +471,44 @@ def get_pipeline_stats() -> dict:
     ).fetchall())
     conn.close()
     return {"total": total, "by_stage": by_stage, "by_source": by_source}
+
+
+def get_interaction_history(museum_id: int) -> list[dict]:
+    """Get full chronological interaction timeline for a museum."""
+    conn = init_db()
+    rows = conn.execute(
+        """SELECT id, direction, channel, subject, body, created_at, is_draft,
+                  event_type, attachments, outcome, follow_up_date, follow_up_action,
+                  contact_id, response_score, sent_at
+           FROM interactions WHERE museum_id = ?
+           ORDER BY created_at ASC""",
+        (museum_id,),
+    ).fetchall()
+    conn.close()
+    cols = ["id", "direction", "channel", "subject", "body", "created_at", "is_draft",
+            "event_type", "attachments", "outcome", "follow_up_date", "follow_up_action",
+            "contact_id", "response_score", "sent_at"]
+    return [dict(zip(cols, r)) for r in rows]
+
+
+def get_due_followups(as_of: str = None) -> list[dict]:
+    """Get interactions with follow_up_date <= today (or as_of date)."""
+    if as_of is None:
+        as_of = datetime.now().strftime("%Y-%m-%d")
+    conn = init_db()
+    rows = conn.execute(
+        """SELECT i.id, i.museum_id, m.name as museum_name, i.follow_up_date,
+                  i.follow_up_action, i.event_type, i.body, m.stage
+           FROM interactions i
+           JOIN museums m ON m.id = i.museum_id
+           WHERE i.follow_up_date IS NOT NULL AND i.follow_up_date <= ?
+           ORDER BY i.follow_up_date ASC""",
+        (as_of,),
+    ).fetchall()
+    conn.close()
+    cols = ["id", "museum_id", "museum_name", "follow_up_date",
+            "follow_up_action", "event_type", "body", "stage"]
+    return [dict(zip(cols, r)) for r in rows]
 
 
 def get_stale_museums(days: int = 5) -> list[dict]:

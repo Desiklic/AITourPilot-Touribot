@@ -63,9 +63,23 @@ def _build_system_prompt() -> str:
     if biz:
         parts.append(f"\n---\n\n{biz}")
 
+    # Inject pipeline summary
+    pipeline_summary = _get_pipeline_summary()
+    if pipeline_summary:
+        parts.append(f"\n---\n\n## Current Pipeline State\n\n{pipeline_summary}")
+
     parts.append(f"\n---\n\nCurrent date: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
     return "\n".join(parts)
+
+
+def _get_pipeline_summary() -> str:
+    """Get a brief pipeline summary for the system prompt."""
+    try:
+        from tools.leads.pipeline import pipeline_summary_text
+        return pipeline_summary_text()
+    except Exception:
+        return ""
 
 
 def _detect_task_type(user_message: str) -> set[str]:

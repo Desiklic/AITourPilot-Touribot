@@ -1,0 +1,175 @@
+"""Pipeline — Stage queries, stale detection, summary, and formatted output."""
+
+from datetime import datetime
+
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
+
+from tools.leads.lead_db import (
+    STAGE_NAMES, list_museums, get_pipeline_stats, get_stale_museums,
+    get_contacts, get_last_interaction,
+)
+
+console = Console()
+
+
+def pipeline_summary_text() -> str:
+    """Return a one-line pipeline summary for injection into chat context."""
+    stats = get_pipeline_stats()
+    total = stats["total"]
+    if total == 0:
+        return "Pipeline: empty (no museums imported yet)"
+
+    parts = [f"Pipeline: {total} museums total"]
+    for stage in sorted(stats["by_stage"].keys()):
+        count = stats["by_stage"][stage]
+        name = STAGE_NAMES.get(stage, f"Stage {stage}")
+        parts.append(f"Stage {stage} ({name}): {count}")
+
+    stale = get_stale_museums(days=5)
+    if stale:
+        stale_names = [f"{s['name']} ({s['days_idle']}d)" for s in stale[:3]]
+        parts.append(f"Stale: {', '.join(stale_names)}")
+
+    return ". ".join(parts)
+
+
+def pipeline_table(stage_filter: int = None):
+    """Display the pipeline as a formatted rich table."""
+    museums = list_museums(stage=stage_filter)
+
+    if not museums:
+        if stage_filter is not None:
+            console.print(f"[dim]No museums at Stage {stage_filter} ({STAGE_NAMES.get(stage_filter, '?')})[/dim]")
+        else:
+            console.print("[dim]No museums in pipeline. Run: python run.py import-leads <csv> --source hubspot[/dim]")
+        return
+
+    title = "Museum Pipeline"
+    if stage_filter is not None:
+        title += f" — Stage {stage_filter}: {STAGE_NAMES.get(stage_filter, '?')}"
+
+    table = Table(title=title, show_lines=False, padding=(0, 1), expand=True)
+    table.add_column("#", style="dim", width=4, no_wrap=True)
+    table.add_column("Museum", style="bold white", ratio=3)
+    table.add_column("Country", style="white", ratio=1)
+    table.add_column("Stage", style="cyan", width=20, no_wrap=True)
+    table.add_column("Source", style="dim", width=10, no_wrap=True)
+    table.add_column("Updated", style="dim", width=10, no_wrap=True)
+
+    for m in museums:
+        stage = m["stage"]
+        stage_label = f"{stage} {STAGE_NAMES.get(stage, '?')}"
+        updated = (m.get("stage_updated_at") or "")[:10]
+
+        # Color code by stage
+        if stage >= 6:
+            style = "green"
+        elif stage >= 3:
+            style = "cyan"
+        elif stage >= 1:
+            style = "yellow"
+        else:
+            style = "dim"
+
+        table.add_row(
+            str(m["id"]),
+            m["name"],
+            m.get("country") or "",
+            f"[{style}]{stage_label}[/{style}]",
+            m.get("source") or "",
+            updated,
+        )
+
+    console.print()
+    console.print(table)
+
+    # Summary footer
+    stats = get_pipeline_stats()
+    console.print(f"\n[dim]{stats['total']} museums total[/dim]")
+
+
+def show_status():
+    """Quick briefing: pipeline stats + stale contacts + next actions."""
+    stats = get_pipeline_stats()
+    total = stats["total"]
+
+    console.print()
+    console.print(Panel("[bold cyan]TouriBot Status Briefing[/bold cyan]", border_style="cyan"))
+
+    if total == 0:
+        console.print("[dim]Pipeline is empty. Import leads first:[/dim]")
+        console.print("  python run.py import-leads leads/hubspot_export.csv --source hubspot")
+        return
+
+    # Stage breakdown
+    console.print("\n[bold]Pipeline Overview[/bold]")
+    for stage in sorted(stats["by_stage"].keys()):
+        count = stats["by_stage"][stage]
+        name = STAGE_NAMES.get(stage, "?")
+        bar = "█" * count
+        console.print(f"  Stage {stage:2d} ({name:16s}): {count:3d} {bar}")
+
+    console.print(f"\n  [bold]Total: {total} museums[/bold]")
+
+    # Source breakdown
+    if stats["by_source"]:
+        sources = ", ".join(f"{k}: {v}" for k, v in stats["by_source"].items())
+        console.print(f"  Sources: {sources}")
+
+    # Stale contacts
+    stale = get_stale_museums(days=5)
+    if stale:
+        console.print(f"\n[bold yellow]Stale Contacts ({len(stale)} museums idle >5 days)[/bold yellow]")
+        for s in stale[:5]:
+            stage_name = STAGE_NAMES.get(s["stage"], "?")
+            console.print(f"  {s['name']} — Stage {s['stage']} ({stage_name}), {s['days_idle']} days idle")
+    else:
+        console.print("\n[green]No stale contacts[/green]")
+
+    # Next actions
+    console.print(f"\n[bold]Suggested Next Actions[/bold]")
+    actions = next_actions()
+    if actions:
+        for a in actions[:5]:
+            console.print(f"  → {a}")
+    else:
+        console.print("  [dim]No pending actions[/dim]")
+
+    console.print()
+
+
+def next_actions() -> list[str]:
+    """Suggest what Hermann should do next based on pipeline state."""
+    actions = []
+    museums = list_museums()
+
+    stage_0 = [m for m in museums if m["stage"] == 0 and m.get("source") == "hubspot"]
+    if stage_0:
+        actions.append(f"Research {min(len(stage_0), 3)} Stage 0 museums: {', '.join(m['name'] for m in stage_0[:3])}")
+
+    stage_2 = [m for m in museums if m["stage"] == 2]
+    if stage_2:
+        actions.append(f"Draft emails for {len(stage_2)} personalized leads: {', '.join(m['name'] for m in stage_2[:3])}")
+
+    stage_3 = [m for m in museums if m["stage"] == 3]
+    if stage_3:
+        actions.append(f"Check for replies from {len(stage_3)} Stage 3 (Outreach Sent) museums")
+
+    stale = get_stale_museums(days=5)
+    if stale:
+        actions.append(f"Follow up with {len(stale)} stale contacts (>5 days idle)")
+
+    stage_5 = [m for m in museums if m["stage"] == 5]
+    if stage_5:
+        actions.append(f"Act on {len(stage_5)} responded leads: {', '.join(m['name'] for m in stage_5[:3])}")
+
+    if not actions:
+        stage_counts = {}
+        for m in museums:
+            stage_counts[m["stage"]] = stage_counts.get(m["stage"], 0) + 1
+        if stage_counts.get(0, 0) > 0:
+            actions.append("Start researching Stage 0 leads to build pipeline momentum")
+
+    return actions

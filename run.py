@@ -7,6 +7,7 @@ Usage:
     python run.py chat                    # Start interactive chat
     python run.py recall "<query>"        # Search memory
     python run.py remember "<fact>"       # Save a fact to memory
+    python run.py ingest                  # Process knowledge base from source docs
 """
 
 import os
@@ -88,6 +89,12 @@ def cmd_remember(fact: str):
     console.print(f"[dim]  Log: {results.get('log', 'n/a')}[/dim]")
 
 
+def cmd_ingest():
+    """Process knowledge base from source documents."""
+    from tools.knowledge.ingest import run_ingest
+    run_ingest()
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
@@ -107,9 +114,11 @@ def main():
             print("Usage: python run.py remember \"<fact>\"")
             sys.exit(1)
         cmd_remember(" ".join(sys.argv[2:]))
+    elif command == "ingest":
+        cmd_ingest()
     else:
         print(f"Unknown command: {command}")
-        print("Available: chat, recall, remember")
+        print("Available: chat, recall, remember, ingest")
         sys.exit(1)
 
 

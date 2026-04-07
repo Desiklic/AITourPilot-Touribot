@@ -18,6 +18,8 @@ SOUL_MD = PROJECT_ROOT / "soul.md"
 USER_MD = PROJECT_ROOT / "memory" / "USER.md"
 MEMORY_MD = PROJECT_ROOT / "memory" / "MEMORY.md"
 LOGS_DIR = PROJECT_ROOT / "memory" / "logs"
+HARDPROMPTS_DIR = PROJECT_ROOT / "hardprompts"
+KNOWLEDGE_DIR = PROJECT_ROOT / "knowledge" / "processed"
 
 console = Console()
 
@@ -41,7 +43,7 @@ def _load_file(path: Path) -> str:
 
 
 def _build_system_prompt() -> str:
-    """Assemble the system prompt from soul.md + USER.md + MEMORY.md."""
+    """Assemble the system prompt from soul.md + USER.md + MEMORY.md + business_context.md."""
     parts = []
 
     soul = _load_file(SOUL_MD)
@@ -56,9 +58,76 @@ def _build_system_prompt() -> str:
     if memory:
         parts.append(f"\n---\n\n## Working Memory\n\n{memory}")
 
+    # Always load business context (condensed product/pricing/competition)
+    biz = _load_file(HARDPROMPTS_DIR / "business_context.md")
+    if biz:
+        parts.append(f"\n---\n\n{biz}")
+
     parts.append(f"\n---\n\nCurrent date: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
     return "\n".join(parts)
+
+
+def _detect_task_type(user_message: str) -> set[str]:
+    """Detect what kind of task the user is requesting to load relevant knowledge."""
+    msg = user_message.lower()
+    types = set()
+
+    # Drafting emails
+    draft_kw = ["draft", "email", "write", "outreach", "message", "follow-up",
+                 "reactivation", "sequence", "template"]
+    if any(kw in msg for kw in draft_kw):
+        types.add("drafting")
+
+    # Scoring responses / handling objections
+    score_kw = ["score", "response", "reply", "replied", "objection", "decline",
+                 "interested", "not now", "bad timing", "meeting"]
+    if any(kw in msg for kw in score_kw):
+        types.add("scoring")
+
+    # Pipeline / stage management
+    pipe_kw = ["pipeline", "stage", "stale", "status", "next action", "tier"]
+    if any(kw in msg for kw in pipe_kw):
+        types.add("pipeline")
+
+    # Museum research / product questions
+    research_kw = ["museum", "competitor", "smartify", "gesso", "cuseum", "pricing",
+                    "pilot", "eur", "enterprise", "visitor", "procurement"]
+    if any(kw in msg for kw in research_kw):
+        types.add("research")
+
+    return types
+
+
+def _load_knowledge_for_task(task_types: set[str]) -> str:
+    """Load on-demand knowledge files based on detected task type."""
+    parts = []
+
+    if "drafting" in task_types:
+        templates = _load_file(HARDPROMPTS_DIR / "email_templates.md")
+        if templates:
+            parts.append(templates)
+
+    if "scoring" in task_types:
+        objections = _load_file(HARDPROMPTS_DIR / "objection_handling.md")
+        if objections:
+            parts.append(objections)
+
+    if "pipeline" in task_types:
+        pipeline = _load_file(HARDPROMPTS_DIR / "pipeline_guide.md")
+        if pipeline:
+            parts.append(pipeline)
+
+    if "research" in task_types:
+        # Load procurement intelligence and product overview for research questions
+        procurement = _load_file(KNOWLEDGE_DIR / "museum_procurement.md")
+        if procurement:
+            parts.append(procurement)
+
+    if not parts:
+        return ""
+
+    return "\n---\n\n## Loaded Knowledge\n\n" + "\n\n---\n\n".join(parts)
 
 
 def _search_memory_context(user_message: str) -> str:
@@ -227,12 +296,23 @@ def run_chat():
         # Search memory for relevant context
         memory_context = _search_memory_context(user_input)
 
+        # Detect task type and load relevant knowledge
+        task_types = _detect_task_type(user_input)
+        knowledge_context = _load_knowledge_for_task(task_types)
+
         # Build messages
         messages = list(conversation_history)
 
-        # Inject memory context as a system-like user message if we have any
+        # Inject memory + knowledge context
+        context_parts = []
         if memory_context:
-            augmented_input = f"{user_input}\n\n---\n[Context from memory — do not repeat this to the user, use it to inform your response]\n{memory_context}"
+            context_parts.append(memory_context)
+        if knowledge_context:
+            context_parts.append(knowledge_context)
+
+        if context_parts:
+            context_block = "\n\n".join(context_parts)
+            augmented_input = f"{user_input}\n\n---\n[Context — do not repeat this to the user, use it to inform your response]\n{context_block}"
         else:
             augmented_input = user_input
 

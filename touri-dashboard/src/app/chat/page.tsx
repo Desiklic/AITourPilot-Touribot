@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ChatThread } from '@/components/chat/chat-thread';
 import { ChatInput } from '@/components/chat/chat-input';
 import { ChatSidebar } from '@/components/chat/chat-sidebar';
@@ -12,12 +13,22 @@ import type { ChatMessage, ChatSession } from '@/lib/api/chat-api';
 const STREAMING_MSG_ID = -999;
 
 export default function ChatPage() {
+  return (
+    <Suspense fallback={<div className="flex flex-col h-full -m-6" />}>
+      <ChatPageInner />
+    </Suspense>
+  );
+}
+
+function ChatPageInner() {
+  const searchParams = useSearchParams();
   const { setSidebarContent } = useSidebarContent();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [promptPrefill, setPromptPrefill] = useState<string>('');
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
@@ -55,14 +66,29 @@ export default function ChatPage() {
     [scrollToBottom],
   );
 
-  // On mount: fetch sessions and load the most recent one
+  // Read ?prompt= query param and pre-fill the input
   useEffect(() => {
+    const prompt = searchParams.get('prompt');
+    if (prompt) {
+      setPromptPrefill(decodeURIComponent(prompt));
+      // Start a new chat session so the prefilled prompt goes into a fresh context
+      setMessages([]);
+      setSessionId(null);
+    }
+  // Only run on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // On mount: fetch sessions and load the most recent one (skip if prompt param present)
+  useEffect(() => {
+    const promptParam = searchParams.get('prompt');
     const init = async () => {
       setLoading(true);
       try {
         const data = await getSessions();
         setSessions(data || []);
-        if (data && data.length > 0) {
+        // If a prompt param was given, don't load the last session — start fresh
+        if (!promptParam && data && data.length > 0) {
           const latest = data[0]; // sessions are ordered by last_message_at DESC
           setSessionId(latest.session_id);
           const msgs = await getMessages(latest.session_id);
@@ -76,6 +102,7 @@ export default function ChatPage() {
       }
     };
     init();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scrollToBottom]);
 
   const handleSelectSession = useCallback(
@@ -266,7 +293,13 @@ export default function ChatPage() {
 
       {/* Input */}
       <div className="shrink-0">
-        <ChatInput onSend={handleSend} sending={sending} disabled={false} />
+        <ChatInput
+          onSend={handleSend}
+          sending={sending}
+          disabled={false}
+          initialValue={promptPrefill}
+          onInitialValueConsumed={() => setPromptPrefill('')}
+        />
       </div>
     </div>
   );

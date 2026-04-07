@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { Sidebar } from './sidebar';
 import { Header } from './header';
 import { cn } from '@/lib/utils';
@@ -15,8 +15,22 @@ export function useSidebarContent() {
 }
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
+  // Start collapsed on mobile (< 768px), expanded on desktop
   const [collapsed, setCollapsed] = useState(false);
   const [sidebarContent, setSidebarContentRaw] = useState<React.ReactNode>(null);
+
+  // Set initial collapsed state based on viewport width, and listen for resize
+  useEffect(() => {
+    const checkMobile = () => {
+      if (window.innerWidth < 768) {
+        setCollapsed(true);
+      }
+    };
+    // Check immediately on mount
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const setSidebarContent = useCallback((node: React.ReactNode) => {
     setSidebarContentRaw(node);

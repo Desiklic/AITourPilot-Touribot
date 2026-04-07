@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronRight, ExternalLink } from 'lucide-react';
+import { ChevronRight, ExternalLink, Mail } from 'lucide-react';
 import { getMuseumDetail } from '@/lib/db/leads-db';
 import { StageBadge } from '@/components/pipeline/stage-badge';
 import { ScoreBadge } from '@/components/pipeline/score-badge';
@@ -46,6 +46,13 @@ export default async function MuseumDetailPage({ params }: MuseumDetailPageProps
           <StageBadge stage={museum.stage} size="md" />
           {museum.score !== null && <ScoreBadge score={museum.score} />}
           <span className="text-xs text-muted-foreground">Tier {museum.tier}</span>
+          <Link
+            href={`/chat?prompt=${encodeURIComponent(`Draft email for ${museum.name}`)}`}
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+          >
+            <Mail className="size-3.5" />
+            Draft Email
+          </Link>
         </div>
       </div>
 

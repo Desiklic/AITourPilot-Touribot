@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import {
   BarChart,
   Bar,
@@ -49,6 +50,8 @@ function CustomTooltip({
 }
 
 export function PipelineFunnel({ data }: PipelineFunnelProps) {
+  const router = useRouter();
+
   if (!data || data.length === 0) {
     return (
       <div className="flex h-[300px] items-center justify-center text-muted-foreground text-sm">
@@ -97,7 +100,18 @@ export function PipelineFunnel({ data }: PipelineFunnelProps) {
           tickLine={false}
         />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-        <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={32}>
+        <Bar
+          dataKey="count"
+          radius={[0, 4, 4, 0]}
+          maxBarSize={32}
+          cursor="pointer"
+          onClick={(data) => {
+            const entry = data as unknown as StageData;
+            if (entry?.stage !== undefined) {
+              router.push(`/pipeline?stage=${entry.stage}`);
+            }
+          }}
+        >
           <LabelList
             dataKey="count"
             position="right"

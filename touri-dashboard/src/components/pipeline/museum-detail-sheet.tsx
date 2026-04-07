@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ExternalLink, Users, Layers, FlaskConical } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ExternalLink, Users, Layers, FlaskConical, Mail } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -45,6 +46,7 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export function MuseumDetailSheet({ museumId, open, onOpenChange }: MuseumDetailSheetProps) {
+  const router = useRouter();
   const [data, setData] = useState<DetailData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -227,8 +229,17 @@ export function MuseumDetailSheet({ museumId, open, onOpenChange }: MuseumDetail
 
               {/* Footer */}
               <SheetFooter className="border-t px-5 py-3">
-                <Button disabled className="w-full" variant="default">
-                  Draft Email (coming soon)
+                <Button
+                  className="w-full"
+                  variant="default"
+                  onClick={() => {
+                    const prompt = `Draft email for ${museum.name}`;
+                    router.push(`/chat?prompt=${encodeURIComponent(prompt)}`);
+                    onOpenChange(false);
+                  }}
+                >
+                  <Mail className="size-4 mr-2" />
+                  Draft Email
                 </Button>
               </SheetFooter>
             </>

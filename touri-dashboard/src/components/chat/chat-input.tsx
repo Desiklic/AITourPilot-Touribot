@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -8,11 +8,32 @@ export interface ChatInputProps {
   onSend: (message: string) => void;
   disabled?: boolean;
   sending?: boolean;
+  initialValue?: string;
+  onInitialValueConsumed?: () => void;
 }
 
-export function ChatInput({ onSend, disabled, sending }: ChatInputProps) {
+export function ChatInput({ onSend, disabled, sending, initialValue, onInitialValueConsumed }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState('');
+
+  // Pre-fill from initialValue (e.g. ?prompt= query param)
+  useEffect(() => {
+    if (initialValue) {
+      setValue(initialValue);
+      // Trigger height adjustment after value is set
+      requestAnimationFrame(() => {
+        const el = textareaRef.current;
+        if (el) {
+          el.style.height = 'auto';
+          el.style.height = Math.min(el.scrollHeight, 340) + 'px';
+          el.focus();
+          el.setSelectionRange(el.value.length, el.value.length);
+        }
+      });
+      onInitialValueConsumed?.();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialValue]);
 
   const adjustHeight = () => {
     const el = textareaRef.current;

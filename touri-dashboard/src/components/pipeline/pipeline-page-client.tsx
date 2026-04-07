@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { PipelineToolbar } from './pipeline-toolbar';
 import { PipelineKanban } from './pipeline-kanban';
 import { PipelineTable } from './pipeline-table';
@@ -14,6 +15,7 @@ interface PipelinePageClientProps {
 }
 
 export function PipelinePageClient({ initialMuseums }: PipelinePageClientProps) {
+  const searchParams = useSearchParams();
   const [museums, setMuseums] = useState<MuseumListItem[]>(initialMuseums);
   const [view, setView] = useState<'kanban' | 'table'>(() => {
     if (typeof window !== 'undefined') {
@@ -22,7 +24,10 @@ export function PipelinePageClient({ initialMuseums }: PipelinePageClientProps) 
     }
     return 'kanban';
   });
-  const [stageFilter, setStageFilter] = useState<number | null>(null);
+  const [stageFilter, setStageFilter] = useState<number | null>(() => {
+    // Initialize from URL ?stage= param (will be refined in effect)
+    return null;
+  });
   const [selectedMuseumId, setSelectedMuseumId] = useState<number | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -30,6 +35,17 @@ export function PipelinePageClient({ initialMuseums }: PipelinePageClientProps) 
   useEffect(() => {
     localStorage.setItem(VIEW_STORAGE_KEY, view);
   }, [view]);
+
+  // Read ?stage= query param on mount and when it changes
+  useEffect(() => {
+    const stageParam = searchParams.get('stage');
+    if (stageParam !== null) {
+      const parsed = parseInt(stageParam, 10);
+      if (!isNaN(parsed)) {
+        setStageFilter(parsed);
+      }
+    }
+  }, [searchParams]);
 
   // Refetch museums from API
   const refetch = useCallback(async () => {

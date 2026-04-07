@@ -9,7 +9,7 @@ TouriBot is a **purpose-built AI operations assistant** for executing the [AITou
 
 This is not a general-purpose assistant. It is a vertical AI sales agent for cultural institutions, with persistent memory, a visual pipeline, and deep domain knowledge about museums, audioguides, and the competitive landscape.
 
-> **Related documents:** TouriBot operationalizes the [Precision Partner Acquisition Engine](../strategy/20260314-precision-partner-acquisition-engine.html) (strategy: what to send, who to target) and runs on the [Outreach Infrastructure Blueprint](../technical/20260318-outreach-infrastructure-blueprint.html) (infrastructure: .co domain, email authentication, warm-up protocol). All three documents form a layered system: Strategy \u2192 Platform \u2192 Infrastructure.
+> **Related documents:** TouriBot operationalizes the [Precision Partner Acquisition Engine](../strategy/20260314-precision-partner-acquisition-engine.html) (strategy: what to send, who to target) and runs on the [Outreach Infrastructure Blueprint](../technical/20260318-outreach-infrastructure-blueprint.html) (infrastructure: .co domain, email authentication, warm-up protocol). All three documents form a layered system: Strategy → Platform → Infrastructure.
 
 ### Why Build This (Instead of Using ChatGPT / Claude Web)
 
@@ -72,15 +72,15 @@ Inspired by the Content Factory's pipeline-progress-tracker component:
 
 Like the Content Factory's `STAGE_PROGRESSION` map, certain stage transitions happen automatically:
 
-- Stage 0 \u2192 1: Auto-triggered when research agent completes
-- Stage 1 \u2192 2: Auto-triggered when personalization engine completes
-- Stage 3 \u2192 4: Auto-triggered when first email is confirmed sent
+- Stage 0 → 1: Auto-triggered when research agent completes
+- Stage 1 → 2: Auto-triggered when personalization engine completes
+- Stage 3 → 4: Auto-triggered when first email is confirmed sent
 - Stage 5: Auto-scored by AI when reply detected
 
 Manual transitions (require Hermann's action):
-- Stage 2 \u2192 3: Hermann reviews and approves the personalized outreach
-- Stage 5 \u2192 6: Hermann confirms demo booking
-- Stage 6 \u2192 7+: Hermann drives from demo onward
+- Stage 2 → 3: Hermann reviews and approves the personalized outreach
+- Stage 5 → 6: Hermann confirms demo booking
+- Stage 6 → 7+: Hermann drives from demo onward
 
 > The pipeline ensures **nothing falls through the cracks**. Every museum is always at a defined stage with a clear next action.
 
@@ -114,50 +114,50 @@ Manual transitions (require Hermann's action):
 
 ```
 AITourPilot-marketing-platform/
-\u251c\u2500\u2500 CLAUDE.md                    # System handbook (GOTCHA framework)
-\u251c\u2500\u2500 soul.md                      # TouriBot personality
-\u251c\u2500\u2500 args/
-\u2502   \u2514\u2500\u2500 settings.yaml            # All configuration (models, costs, regions)
-\u251c\u2500\u2500 tools/
-\u2502   \u251c\u2500\u2500 api/                     # LLM gateway, agent loop, cost logger
-\u2502   \u251c\u2500\u2500 pipeline/                # Museum pipeline stages (NEW)
-\u2502   \u2502   \u251c\u2500\u2500 stages/              # Stage handlers (00-research through 10-outcome)
-\u2502   \u2502   \u251c\u2500\u2500 orchestrator.py      # Auto-advancement, stage routing
-\u2502   \u2502   \u2514\u2500\u2500 pipeline_db.py       # Pipeline state persistence
-\u2502   \u251c\u2500\u2500 outreach/                # Email + LinkedIn message generation (NEW)
-\u2502   \u2502   \u251c\u2500\u2500 personalization.py   # Deep research + insight generation
-\u2502   \u2502   \u251c\u2500\u2500 sequences.py         # 3-step message templates
-\u2502   \u2502   \u251c\u2500\u2500 response_scorer.py   # AI-powered reply classification
-\u2502   \u2502   \u2514\u2500\u2500 email_sender.py      # SMTP / Instantly.ai integration
-\u2502   \u251c\u2500\u2500 memory/                  # 3-tier memory system (from HenryBot)
-\u2502   \u251c\u2500\u2500 tasks/                   # Kanban task board (from HenryBot)
-\u2502   \u251c\u2500\u2500 notes/                   # Numbered notes system (from HenryBot)
-\u2502   \u251c\u2500\u2500 executors/               # Agent SDK, session manager, research
-\u2502   \u251c\u2500\u2500 router/                  # Model routing (haiku/sonnet/opus)
-\u2502   \u251c\u2500\u2500 heartbeat/               # Morning briefing, health checks
-\u2502   \u251c\u2500\u2500 calendar/                # Calendar integration
-\u2502   \u2514\u2500\u2500 integrations/            # Telegram, LinkedIn, email services
-\u251c\u2500\u2500 touri-dashboard/             # Next.js app (from HenryBot dashboard)
-\u2502   \u251c\u2500\u2500 app/
-\u2502   \u2502   \u251c\u2500\u2500 dashboard/           # Overview: pipeline stats, activity feed
-\u2502   \u2502   \u251c\u2500\u2500 pipeline/            # Museum pipeline board + detail views
-\u2502   \u2502   \u251c\u2500\u2500 chat/                # Chat interface (from ChatProgElectron)
-\u2502   \u2502   \u251c\u2500\u2500 board/               # Kanban task board
-\u2502   \u2502   \u251c\u2500\u2500 calendar/            # Activity calendar
-\u2502   \u2502   \u251c\u2500\u2500 costs/               # Cost monitor
-\u2502   \u2502   \u251c\u2500\u2500 notes/               # Shared notes
-\u2502   \u2502   \u251c\u2500\u2500 memory/              # Memory browser
-\u2502   \u2502   \u2514\u2500\u2500 models/              # Model selector + cache stats
-\u2502   \u2514\u2500\u2500 components/
-\u2502       \u251c\u2500\u2500 pipeline/            # Pipeline tracker, museum cards, stage badges
-\u2502       \u251c\u2500\u2500 chat/                # Message bubbles, composer, voice, images
-\u2502       \u2514\u2500\u2500 ui/                  # Shared components (shadcn/ui)
-\u251c\u2500\u2500 data/
-\u2502   \u251c\u2500\u2500 touri.db                 # Main SQLite: pipeline, tasks, notes, memory
-\u2502   \u251c\u2500\u2500 costs.db                 # Cost tracking (from HenryBot)
-\u2502   \u2514\u2500\u2500 memory.db                # Memory vectors + FTS5 (from HenryBot)
-\u251c\u2500\u2500 output/                      # Generated content (emails, one-pagers, research)
-\u2514\u2500\u2500 hardprompts/                 # Architecture docs, pipeline specs
+├── CLAUDE.md                    # System handbook (GOTCHA framework)
+├── soul.md                      # TouriBot personality
+├── args/
+│   └── settings.yaml            # All configuration (models, costs, regions)
+├── tools/
+│   ├── api/                     # LLM gateway, agent loop, cost logger
+│   ├── pipeline/                # Museum pipeline stages (NEW)
+│   │   ├── stages/              # Stage handlers (00-research through 10-outcome)
+│   │   ├── orchestrator.py      # Auto-advancement, stage routing
+│   │   └── pipeline_db.py       # Pipeline state persistence
+│   ├── outreach/                # Email + LinkedIn message generation (NEW)
+│   │   ├── personalization.py   # Deep research + insight generation
+│   │   ├── sequences.py         # 3-step message templates
+│   │   ├── response_scorer.py   # AI-powered reply classification
+│   │   └── email_sender.py      # SMTP / Instantly.ai integration
+│   ├── memory/                  # 3-tier memory system (from HenryBot)
+│   ├── tasks/                   # Kanban task board (from HenryBot)
+│   ├── notes/                   # Numbered notes system (from HenryBot)
+│   ├── executors/               # Agent SDK, session manager, research
+│   ├── router/                  # Model routing (haiku/sonnet/opus)
+│   ├── heartbeat/               # Morning briefing, health checks
+│   ├── calendar/                # Calendar integration
+│   └── integrations/            # Telegram, LinkedIn, email services
+├── touri-dashboard/             # Next.js app (from HenryBot dashboard)
+│   ├── app/
+│   │   ├── dashboard/           # Overview: pipeline stats, activity feed
+│   │   ├── pipeline/            # Museum pipeline board + detail views
+│   │   ├── chat/                # Chat interface (from ChatProgElectron)
+│   │   ├── board/               # Kanban task board
+│   │   ├── calendar/            # Activity calendar
+│   │   ├── costs/               # Cost monitor
+│   │   ├── notes/               # Shared notes
+│   │   ├── memory/              # Memory browser
+│   │   └── models/              # Model selector + cache stats
+│   └── components/
+│       ├── pipeline/            # Pipeline tracker, museum cards, stage badges
+│       ├── chat/                # Message bubbles, composer, voice, images
+│       └── ui/                  # Shared components (shadcn/ui)
+├── data/
+│   ├── touri.db                 # Main SQLite: pipeline, tasks, notes, memory
+│   ├── costs.db                 # Cost tracking (from HenryBot)
+│   └── memory.db                # Memory vectors + FTS5 (from HenryBot)
+├── output/                      # Generated content (emails, one-pagers, research)
+└── hardprompts/                 # Architecture docs, pipeline specs
 ```
 
 ---
@@ -189,7 +189,7 @@ AITourPilot-marketing-platform/
 
 **New for TouriBot:**
 - Pipeline-aware context: Touri knows which museums are at which stage
-- Inline pipeline actions: "Research Museum X" triggers Stage 0\u21921 progression
+- Inline pipeline actions: "Research Museum X" triggers Stage 0→1 progression
 - Message draft preview: see the personalized email before approving send
 - Quick approval buttons: "Approve and Send" / "Edit First" / "Skip"
 - Museum context cards in chat: when discussing a museum, its pipeline card appears inline
@@ -251,16 +251,16 @@ Inherited from HenryBot's kanban system, adapted for the human-AI collaboration 
 
 | Assigner | Assignee | Example Tasks |
 |----------|---------|---------------|
-| Hermann \u2192 Touri | Research | "Research Museum X -- find their digital strategy" |
-| Hermann \u2192 Touri | Writing | "Draft a personalized email for Museum Y" |
-| Hermann \u2192 Touri | Analysis | "Score and classify yesterday's 5 email replies" |
-| Touri \u2192 Hermann | Action | "Review and approve 3 outreach messages" |
-| Touri \u2192 Hermann | Action | "LinkedIn: comment on [Contact]'s recent post" |
-| Touri \u2192 Hermann | Decision | "Museum Z replied with interest -- schedule demo?" |
+| Hermann → Touri | Research | "Research Museum X -- find their digital strategy" |
+| Hermann → Touri | Writing | "Draft a personalized email for Museum Y" |
+| Hermann → Touri | Analysis | "Score and classify yesterday's 5 email replies" |
+| Touri → Hermann | Action | "Review and approve 3 outreach messages" |
+| Touri → Hermann | Action | "LinkedIn: comment on [Contact]'s recent post" |
+| Touri → Hermann | Decision | "Museum Z replied with interest -- schedule demo?" |
 
 ### Task Lifecycle
 
-Backlog \u2192 Todo \u2192 In Progress \u2192 In Review \u2192 Done \u2192 Archived
+Backlog → Todo → In Progress → In Review → Done → Archived
 
 Each task has: priority (urgent/high/medium/low), assignee (hermann/touri), linked museum (pipeline reference), definition of done, cost tracking.
 
@@ -328,7 +328,7 @@ Explicitly excluded to keep the project lean and deliverable:
 | Build personalization.py: museum website scrape + LinkedIn + insights generation | New (uses HenryBot research executor pattern) | 3-4h |
 | Build sequences.py: 3-step message templates with personalization merge | New | 2h |
 | Build response_scorer.py: AI classification of replies (Score 1-5) | New | 2h |
-| Add auto-advancement logic: Stage 0\u21921, 1\u21922, 3\u21924, reply\u21925 | Content Factory pattern | 2-3h |
+| Add auto-advancement logic: Stage 0→1, 1→2, 3→4, reply→5 | Content Factory pattern | 2-3h |
 | Wire email sending (SMTP or Instantly.ai API) | New | 2-3h |
 | Morning briefing adapted for pipeline status | HenryBot heartbeat | 2h |
 | **Total** | | **~15-18h** |
@@ -492,20 +492,20 @@ This is the key UX for the "approve-first, visible rest" model:
 
 ```
 Message 1 drafted by Touri
-        \u2193
+        ↓
 Calendar event created: "Review & Send: Museum X - Email 1"
   - Date: Today (or when Hermann wants)
   - Notes field contains: full email text + one-click edit link
   - Hermann reviews, adjusts if needed, sends manually
-        \u2193
-Message 1 sent \u2192 Pipeline moves to Stage 4
-        \u2193
+        ↓
+Message 1 sent → Pipeline moves to Stage 4
+        ↓
 Calendar event auto-created: "Queued: Museum X - Email 2 (Day 3)"
   - Date: 3 days after Message 1
   - Notes: full email text, editable until send time
   - If Hermann clicks and edits: updated version sends
   - If Hermann ignores: original version auto-sends at scheduled time
-        \u2193
+        ↓
 Calendar event auto-created: "Queued: Museum X - Email 3 (Day 8)"
   - Same pattern as Email 2
 ```
@@ -558,7 +558,7 @@ Revised for dashboard-first approach and all decisions above:
 | Build response_scorer.py: AI classification of replies (Score 1-5) | 2h |
 | Build email_drafter.py: Apple Mail draft creation via AppleScript | 2h |
 | Build email_queue.py: schedule Messages 2/3, create calendar events | 2-3h |
-| Auto-advancement logic: Stage 0\u21921, 1\u21922, 3\u21924, reply\u21925 | 2h |
+| Auto-advancement logic: Stage 0→1, 1→2, 3→4, reply→5 | 2h |
 | Morning briefing adapted for pipeline + calendar + email queue status | 2h |
 | LinkedIn message drafter (outputs to clipboard/notes for copy-paste) | 1h |
 | **Subtotal** | **~16-20h** |
@@ -673,12 +673,12 @@ For structured process knowledge, use the hardprompts/ folder (HenryBot pattern)
 
 ```
 hardprompts/
-\u251c\u2500\u2500 architecture.md          # This document (for dev reference)
-\u251c\u2500\u2500 outreach_process.md      # The 6-module system, step by step
-\u251c\u2500\u2500 linkedin_playbook.md     # Content calendar, posting rules, hooks
-\u251c\u2500\u2500 objection_handling.md    # Top 10 museum objections + responses
-\u251c\u2500\u2500 email_templates.md       # All message templates (3-step + reactivation)
-\u2514\u2500\u2500 pricing_guide.md         # Pilot pricing, license tiers, negotiation ranges
+├── architecture.md          # This document (for dev reference)
+├── outreach_process.md      # The 6-module system, step by step
+├── linkedin_playbook.md     # Content calendar, posting rules, hooks
+├── objection_handling.md    # Top 10 museum objections + responses
+├── email_templates.md       # All message templates (3-step + reactivation)
+└── pricing_guide.md         # Pilot pricing, license tiers, negotiation ranges
 ```
 
 These are loaded into context **only when the relevant skill is activated** -- not on every message. The CLAUDE.md references them by path, and Touri reads them when the conversation topic matches.

@@ -219,32 +219,32 @@ Value: v=DMARC1; p=quarantine; rua=mailto:dmarc-reports@aitourpilot.co; pct=100
 
 ```
 aitourpilot.com (Edis.at)
-\\u251c\\u2500\\u2500 DNS: Edis.at nameservers
-\\u251c\\u2500\\u2500 Website: Squarespace
-\\u251c\\u2500\\u2500 Email: Zoho
-\\u2514\\u2500\\u2500 Renewal: May 24, 2026 (EUR 0.00 bundled with vHost)
+\├\─\─ DNS: Edis.at nameservers
+\├\─\─ Website: Squarespace
+\├\─\─ Email: Zoho
+\└\─\─ Renewal: May 24, 2026 (EUR 0.00 bundled with vHost)
 ```
 
 ### Target State (After All Migrations)
 
 ```
 aitourpilot.com (registered: Cloudflare, DNS: Cloudflare)
-\\u251c\\u2500\\u2500 Website: Vercel (Next.js -- rebuilt site)
-\\u251c\\u2500\\u2500 Email: Zoho (unchanged)
-\\u2514\\u2500\\u2500 Status: Canonical domain, Google-indexed
+\├\─\─ Website: Vercel (Next.js -- rebuilt site)
+\├\─\─ Email: Zoho (unchanged)
+\└\─\─ Status: Canonical domain, Google-indexed
 
 aitourpilot.co (registered: Cloudflare, DNS: Cloudflare)
-\\u251c\\u2500\\u2500 Website: 301 redirect to aitourpilot.com
-\\u251c\\u2500\\u2500 Email: Google Workspace (outreach)
-\\u2514\\u2500\\u2500 Status: Outreach domain, not indexed
+\├\─\─ Website: 301 redirect to aitourpilot.com
+\├\─\─ Email: Google Workspace (outreach)
+\└\─\─ Status: Outreach domain, not indexed
 
 aitourpilot.eu, .de, .fr, .nl, .es, .at, .dk (registered: INWX, DNS: Cloudflare)
-\\u251c\\u2500\\u2500 Website: 301 redirect to aitourpilot.com
-\\u2514\\u2500\\u2500 Status: Reserved / defensive (all redirect via Cloudflare page rules)
+\├\─\─ Website: 301 redirect to aitourpilot.com
+\└\─\─ Status: Reserved / defensive (all redirect via Cloudflare page rules)
 
 aitourpilot.co.uk (registered: Cloudflare, DNS: Cloudflare)
-\\u251c\\u2500\\u2500 Website: 301 redirect to aitourpilot.com
-\\u2514\\u2500\\u2500 Status: Reserved / defensive
+\├\─\─ Website: 301 redirect to aitourpilot.com
+\└\─\─ Status: Reserved / defensive
 ```
 
 ### Why Cloudflare for DNS (Even When Not the Registrar)

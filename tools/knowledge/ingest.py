@@ -98,6 +98,8 @@ def _clean_markdown(md: str) -> str:
     # Unescape backtick escapes from JS template literals
     md = md.replace("\\`", "`")
     md = md.replace("\\$", "$")
+    # Unescape unicode sequences (e.g. \u2192 → →, \u2193 → ↓)
+    md = re.sub(r'\\u([0-9a-fA-F]{4})', lambda m: chr(int(m.group(1), 16)), md)
     # Remove any zero-width characters
     md = md.replace("\u200b", "")
     # Normalize line endings

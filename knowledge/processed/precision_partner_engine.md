@@ -75,20 +75,20 @@ The Precision Partner Acquisition Engine consists of **6 modules** working in co
 
 ```
 Direct Outreach (Module 1-6)
-        \u2193
+        ↓
 Profile Check (Authority Layer visible)
-        \u2193
+        ↓
 Intro Call
-        \u2193
+        ↓
 Concept Resonance
-        \u2193
+        ↓
 Pilot Proposal
-        \u2193
+        ↓
 Closed Deal
 
 Parallel support:
-Consumer Interest List \u2192 Shown as proof \u2192 Reduces risk perception
-Award + 28 Museums \u2192 Shown as capability \u2192 Builds confidence
+Consumer Interest List → Shown as proof → Reduces risk perception
+Award + 28 Museums → Shown as capability → Builds confidence
 ```
 
 ### Prerequisites & Related Documents
@@ -357,13 +357,13 @@ The conversion path from campaign click to scheduled meeting is now frictionless
 
 ```
 LinkedIn ad / outreach email / organic post
-        \u2193
+        ↓
 Campaign landing page (engage.aitourpilot.com/museums)
-        \u2193
+        ↓
 "Book a 30-Minute Demo" button
-        \u2193
+        ↓
 Google Calendar appointment page (hermann@aitourpilot.com)
-        \u2193
+        ↓
 Automatic Google Meet link + calendar event + confirmation email
 ```
 
@@ -573,17 +573,17 @@ Different angle: these are a mix of art enthusiasts and museum-adjacent professi
 This is where all layers create compound momentum:
 
 ```
-Award announcement \u2192 Authority
-        \u2193
-LinkedIn content \u2192 Profile visitors \u2192 Warm leads
-        \u2193
-Direct outreach \u2192 Demo calls \u2192 Pilot proposals
-        \u2193
-Consumer reactivation \u2192 App users \u2192 Demand signal
-        \u2193
-Pilot museum \u2192 Case study \u2192 PR story
-        \u2193
-Second museum easier \u2192 Barcelona cluster \u2192 European expansion
+Award announcement → Authority
+        ↓
+LinkedIn content → Profile visitors → Warm leads
+        ↓
+Direct outreach → Demo calls → Pilot proposals
+        ↓
+Consumer reactivation → App users → Demand signal
+        ↓
+Pilot museum → Case study → PR story
+        ↓
+Second museum easier → Barcelona cluster → European expansion
 ```
 
 ### The Barcelona Cluster Strategy

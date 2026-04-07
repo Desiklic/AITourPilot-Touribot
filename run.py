@@ -4,10 +4,13 @@
 Entry point for all TouriBot commands.
 
 Usage:
-    python run.py chat                    # Start interactive chat
-    python run.py recall "<query>"        # Search memory
-    python run.py remember "<fact>"       # Save a fact to memory
-    python run.py ingest                  # Process knowledge base from source docs
+    python run.py chat                              # Start interactive chat
+    python run.py draft "<name>, <institution>"     # Draft an outreach email
+    python run.py draft --follow-up "<institution>" # Draft a follow-up email
+    python run.py log-response "<institution>"      # Score an inbound reply
+    python run.py recall "<query>"                  # Search memory
+    python run.py remember "<fact>"                 # Save a fact to memory
+    python run.py ingest                            # Process knowledge base
 """
 
 import os
@@ -33,13 +36,7 @@ def cmd_recall(query: str):
     from rich.console import Console
     from rich.table import Table
 
-    # Load .env
-    try:
-        from dotenv import load_dotenv
-        load_dotenv(PROJECT_ROOT / ".env")
-    except ImportError:
-        pass
-
+    _load_env()
     from tools.memory.memory_db import hybrid_search
 
     console = Console()
@@ -71,13 +68,7 @@ def cmd_remember(fact: str):
     """Save a fact to memory."""
     from rich.console import Console
 
-    # Load .env
-    try:
-        from dotenv import load_dotenv
-        load_dotenv(PROJECT_ROOT / ".env")
-    except ImportError:
-        pass
-
+    _load_env()
     from tools.memory.memory_write import write_memory
 
     console = Console()
@@ -89,10 +80,113 @@ def cmd_remember(fact: str):
     console.print(f"[dim]  Log: {results.get('log', 'n/a')}[/dim]")
 
 
+def cmd_draft(args: list[str]):
+    """Draft a personalized outreach email."""
+    from rich.console import Console
+
+    _load_env()
+
+    console = Console()
+
+    # Parse arguments
+    message_type = "initial"
+    extra_context = ""
+    target = ""
+
+    i = 0
+    while i < len(args):
+        if args[i] == "--follow-up":
+            message_type = "follow-up"
+        elif args[i] == "--response":
+            message_type = "response"
+        elif args[i] == "--context":
+            if i + 1 < len(args):
+                i += 1
+                extra_context = args[i]
+        else:
+            if target:
+                target += " " + args[i]
+            else:
+                target = args[i]
+        i += 1
+
+    if not target:
+        console.print("[red]Usage:[/red] python run.py draft \"Name, Institution\"")
+        console.print("       python run.py draft --follow-up \"Institution\"")
+        return
+
+    # Parse "Name, Institution" or just "Institution"
+    contact_name = ""
+    museum_name = target
+    if "," in target:
+        parts = target.split(",", 1)
+        contact_name = parts[0].strip()
+        museum_name = parts[1].strip()
+
+    console.print(f"\n[bold cyan]Drafting {message_type} email[/bold cyan]")
+    console.print(f"  Museum: {museum_name}")
+    if contact_name:
+        console.print(f"  Contact: {contact_name}")
+    console.print()
+
+    from tools.outreach.drafter import draft_email
+    result = draft_email(
+        museum_name=museum_name,
+        contact_name=contact_name,
+        message_type=message_type,
+        extra_context=extra_context,
+    )
+
+
+def cmd_log_response(args: list[str]):
+    """Score an inbound reply from a museum contact."""
+    from rich.console import Console
+
+    _load_env()
+
+    console = Console()
+
+    museum_name = " ".join(args) if args else ""
+    if not museum_name:
+        console.print("[red]Usage:[/red] python run.py log-response \"Museum Name\"")
+        return
+
+    console.print(f"\n[bold cyan]Scoring response from {museum_name}[/bold cyan]")
+    console.print("Paste the reply text below, then press Enter twice (empty line) to submit:\n")
+
+    # Read multiline input
+    lines = []
+    while True:
+        try:
+            line = input()
+            if line == "" and lines:
+                break
+            lines.append(line)
+        except EOFError:
+            break
+
+    reply_text = "\n".join(lines).strip()
+    if not reply_text:
+        console.print("[yellow]No reply text provided. Aborting.[/yellow]")
+        return
+
+    from tools.outreach.scorer import score_response
+    result = score_response(museum_name=museum_name, reply_text=reply_text)
+
+
 def cmd_ingest():
     """Process knowledge base from source documents."""
     from tools.knowledge.ingest import run_ingest
     run_ingest()
+
+
+def _load_env():
+    """Load .env file."""
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(PROJECT_ROOT / ".env")
+    except ImportError:
+        pass
 
 
 def main():
@@ -104,6 +198,10 @@ def main():
 
     if command == "chat":
         cmd_chat()
+    elif command == "draft":
+        cmd_draft(sys.argv[2:])
+    elif command in ("log-response", "log_response"):
+        cmd_log_response(sys.argv[2:])
     elif command == "recall":
         if len(sys.argv) < 3:
             print("Usage: python run.py recall \"<query>\"")
@@ -118,7 +216,7 @@ def main():
         cmd_ingest()
     else:
         print(f"Unknown command: {command}")
-        print("Available: chat, recall, remember, ingest")
+        print("Available: chat, draft, log-response, recall, remember, ingest")
         sys.exit(1)
 
 

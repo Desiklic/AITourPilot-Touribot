@@ -14,3 +14,4 @@
 - [2026-04-07] Georgie Power had a meeting with Hermann approximately one year ago
 - [2026-04-07] Georgie Power showed interest but there was no follow-up from either side - represents a reactivation opportunity
 - [2026-04-07] A reactivation email approach is appropriate for re-engaging Georgie Power
+- [2026-04-07] [MUSEUM: SS Great Britain] Received reply from Georgie Power, scored 5/5 (Meeting requested). Georgie is warm, references the prior relationship, and has directly proposed a meeting next week — this is a clear buying signal and an open door to re-engage. The conservation project mention is a useful context hook for the conversation.

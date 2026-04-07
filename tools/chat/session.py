@@ -99,7 +99,7 @@ def _detect_task_type(user_message: str) -> set[str]:
     return types
 
 
-def _load_knowledge_for_task(task_types: set[str]) -> str:
+def _load_knowledge_for_task(task_types: set[str], user_message: str = "") -> str:
     """Load on-demand knowledge files based on detected task type."""
     parts = []
 
@@ -107,6 +107,18 @@ def _load_knowledge_for_task(task_types: set[str]) -> str:
         templates = _load_file(HARDPROMPTS_DIR / "email_templates.md")
         if templates:
             parts.append(templates)
+
+        # Also inject personalizer brief if we can detect a museum/contact
+        if user_message:
+            try:
+                from tools.outreach.personalizer import build_context, format_brief
+                # Try to extract museum/contact names from the message
+                brief_ctx = _extract_draft_target(user_message)
+                if brief_ctx:
+                    ctx = build_context(brief_ctx["museum"], brief_ctx.get("contact", ""))
+                    parts.append(format_brief(ctx))
+            except Exception:
+                pass
 
     if "scoring" in task_types:
         objections = _load_file(HARDPROMPTS_DIR / "objection_handling.md")
@@ -119,7 +131,6 @@ def _load_knowledge_for_task(task_types: set[str]) -> str:
             parts.append(pipeline)
 
     if "research" in task_types:
-        # Load procurement intelligence and product overview for research questions
         procurement = _load_file(KNOWLEDGE_DIR / "museum_procurement.md")
         if procurement:
             parts.append(procurement)
@@ -128,6 +139,64 @@ def _load_knowledge_for_task(task_types: set[str]) -> str:
         return ""
 
     return "\n---\n\n## Loaded Knowledge\n\n" + "\n\n---\n\n".join(parts)
+
+
+def _extract_draft_target(message: str) -> dict | None:
+    """Try to extract museum and contact names from a drafting request."""
+    import re
+    msg = message.lower()
+
+    # Known museums for fast matching
+    known_museums = {
+        "ss great britain": "SS Great Britain",
+        "great britain": "SS Great Britain",
+        "joanneum": "Universalmuseum Joanneum",
+        "universalmuseum joanneum": "Universalmuseum Joanneum",
+        "loevestein": "Slot Loevestein",
+        "slot loevestein": "Slot Loevestein",
+        "cap sciences": "Cap Sciences",
+        "mah geneva": "MAH Geneva",
+        "mah": "MAH Geneva",
+        "albertina": "Albertina",
+        "bletchley": "Bletchley Park",
+        "bletchley park": "Bletchley Park",
+    }
+
+    # Known contacts
+    known_contacts = {
+        "georgie power": "Georgie Power",
+        "georgie": "Georgie Power",
+        "lisa witschnig": "Lisa Witschnig",
+        "lisa": "Lisa Witschnig",
+        "nils van keulen": "Nils van Keulen",
+        "nils": "Nils van Keulen",
+        "sebastien mathivet": "Sebastien Mathivet",
+        "sebastien": "Sebastien Mathivet",
+        "treglia": "Treglia-Detraz",
+    }
+
+    museum = None
+    contact = None
+
+    for key, val in known_museums.items():
+        if key in msg:
+            museum = val
+            break
+
+    for key, val in known_contacts.items():
+        if key in msg:
+            contact = val
+            break
+
+    # Try "for X at Y" pattern
+    if not museum:
+        m = re.search(r'(?:for|to)\s+\w+\s+(?:\w+\s+)?at\s+(.+?)(?:\.|,|$)', msg)
+        if m:
+            museum = m.group(1).strip().title()
+
+    if museum:
+        return {"museum": museum, "contact": contact or ""}
+    return None
 
 
 def _search_memory_context(user_message: str) -> str:
@@ -298,7 +367,7 @@ def run_chat():
 
         # Detect task type and load relevant knowledge
         task_types = _detect_task_type(user_input)
-        knowledge_context = _load_knowledge_for_task(task_types)
+        knowledge_context = _load_knowledge_for_task(task_types, user_input)
 
         # Build messages
         messages = list(conversation_history)

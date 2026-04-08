@@ -40,7 +40,9 @@ const MUSEUMS_BASE_QUERY = `
     c.email    as primary_contact_email,
     (SELECT MAX(created_at) FROM interactions WHERE museum_id = m.id) as last_activity
   FROM museums m
-  LEFT JOIN contacts c ON c.museum_id = m.id AND c.is_primary = 1
+  LEFT JOIN contacts c ON c.id = (
+    SELECT id FROM contacts WHERE museum_id = m.id AND is_primary = 1 ORDER BY id LIMIT 1
+  )
 `;
 
 export function getMuseums(stage?: number): MuseumRow[] {

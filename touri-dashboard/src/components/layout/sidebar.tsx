@@ -3,38 +3,45 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Kanban,
-  MessageSquare,
-  BarChart2,
-  Calendar,
-  CheckSquare,
-  Brain,
-  Settings,
   Landmark,
+  Settings,
+  Brain,
+  Cpu,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
-const NAV_ITEMS = [
-  { icon: Kanban, label: 'Pipeline', href: '/pipeline' },
-  { icon: MessageSquare, label: 'Chat', href: '/chat' },
-  { icon: BarChart2, label: 'Stats', href: '/stats' },
-  { icon: Calendar, label: 'Calendar', href: '/calendar' },
-  { icon: CheckSquare, label: 'Tasks', href: '/tasks' },
-  { icon: Brain, label: 'Memory', href: '/memory' },
+const USER_MENU_ITEMS = [
   { icon: Settings, label: 'Settings', href: '/settings' },
+  { icon: Brain, label: 'Memory', href: '/memory' },
+  { icon: Cpu, label: 'Models', href: '/models' },
 ];
 
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
-  /** Slot for page-specific content rendered in the middle area */
+  /** Slot for page-specific content (e.g. chat session list) rendered in the middle area */
   children?: React.ReactNode;
 }
 
 export function Sidebar({ collapsed, onToggle, children }: SidebarProps) {
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
 
   return (
     <aside
@@ -71,31 +78,6 @@ export function Sidebar({ collapsed, onToggle, children }: SidebarProps) {
         </button>
       </div>
 
-      {/* Nav items */}
-      <nav className={cn('flex flex-col gap-1 px-2 py-3', collapsed && 'items-center')}>
-        {NAV_ITEMS.map((item) => {
-          const isActive =
-            pathname === item.href || pathname?.startsWith(item.href + '/');
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                collapsed && 'justify-center px-0 w-10',
-                isActive
-                  ? 'bg-[var(--sidebar-accent)] text-[var(--sidebar-accent-foreground)]'
-                  : 'text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)]'
-              )}
-              title={collapsed ? item.label : undefined}
-            >
-              <item.icon className="w-4 h-4 shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
-          );
-        })}
-      </nav>
-
       {/* Middle area — page-specific content or spacer */}
       {children && !collapsed ? (
         <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
@@ -103,11 +85,48 @@ export function Sidebar({ collapsed, onToggle, children }: SidebarProps) {
         <div className="flex-1" />
       )}
 
-      {/* Bottom section — Hermann avatar */}
-      <div className={cn('px-3 pb-4', collapsed && 'flex justify-center px-0')}>
-        <div
+      {/* Bottom section with user menu */}
+      <div className="px-3 pb-14 relative" ref={menuRef}>
+        {/* Popup menu — pops UP from avatar */}
+        {menuOpen && (
+          <div
+            className={cn(
+              'absolute bottom-full mb-2 py-1 rounded-lg border z-50',
+              'bg-white border-[var(--sidebar-border)] shadow-lg',
+              collapsed ? 'left-0 w-[200px]' : 'left-3 right-3'
+            )}
+          >
+            {USER_MENU_ITEMS.map((item) => {
+              const isActive =
+                pathname === item.href || pathname?.startsWith(item.href + '/');
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMenuOpen(false)}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2 text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-[var(--sidebar-accent)] text-[var(--sidebar-accent-foreground)]'
+                      : 'text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)]'
+                  )}
+                >
+                  <item.icon className="w-4 h-4 shrink-0" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Hermann avatar button */}
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
           className={cn(
-            'flex items-center gap-3 px-3 py-2 rounded-lg',
+            'flex items-center gap-3 px-3 py-2 rounded-lg w-full transition-colors',
+            menuOpen
+              ? 'bg-[var(--sidebar-accent)]'
+              : 'hover:bg-[var(--sidebar-accent)]',
             collapsed && 'justify-center px-0'
           )}
         >
@@ -125,7 +144,7 @@ export function Sidebar({ collapsed, onToggle, children }: SidebarProps) {
               <p className="text-xs text-[var(--sidebar-foreground)]">Online</p>
             </div>
           )}
-        </div>
+        </button>
       </div>
     </aside>
   );

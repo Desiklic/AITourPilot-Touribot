@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Optional
 
 import anthropic
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -303,7 +303,7 @@ def list_sessions(limit: int = Query(50, ge=1, le=200)):
             preview = (preview_row["content"][:120] + "...") if preview_row else ""
             sessions.append(
                 {
-                    "id": row["session_id"],
+                    "session_id": row["session_id"],
                     "title": row["title"],
                     "preview": preview,
                     "message_count": row["message_count"],
@@ -364,6 +364,32 @@ def get_messages(
         conn.close()
 
 
+@router.patch("/sessions")
+async def rename_session(request: Request):
+    """Rename (or set title for) a session."""
+    body = await request.json()
+    session_id = body.get("session_id")
+    title = body.get("title", "").strip()
+    if not session_id:
+        raise HTTPException(status_code=422, detail="session_id is required")
+    if not title:
+        raise HTTPException(status_code=422, detail="title must not be empty")
+    conn = _get_db()
+    try:
+        conn.execute(
+            """
+            INSERT INTO session_titles (session_id, title)
+            VALUES (?, ?)
+            ON CONFLICT(session_id) DO UPDATE SET title = excluded.title
+            """,
+            (session_id, title),
+        )
+        conn.commit()
+        return {"renamed": True, "session_id": session_id, "title": title}
+    finally:
+        conn.close()
+
+
 @router.delete("/sessions/{session_id}")
 def delete_session(session_id: str):
     """Delete all messages and title for a session."""
@@ -373,5 +399,176 @@ def delete_session(session_id: str):
         conn.execute("DELETE FROM session_titles WHERE session_id = ?", (session_id,))
         conn.commit()
         return {"deleted": True, "session_id": session_id}
+    finally:
+        conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Research endpoints
+# ---------------------------------------------------------------------------
+
+RESEARCH_DB_PATH = PROJECT_ROOT / "data" / "research.db"
+
+
+def _get_research_db() -> sqlite3.Connection:
+    """Open research.db (creating schema if needed) and return connection."""
+    from tools.research.research_state import _get_db as _get_research_state_db
+    return _get_research_state_db(RESEARCH_DB_PATH)
+
+
+@router.post("/research")
+async def start_research(request: Request):
+    """Start a deep research session in a background thread.
+
+    Body: {"query": "...", "depth": "standard", "museum_id": null}
+    Returns: {"session_id": "...", "status": "started"}
+    """
+    body = await request.json()
+    query = body.get("query", "").strip()
+    depth = body.get("depth", "standard")
+    museum_id = body.get("museum_id")  # optional int — links research to a museum lead
+
+    if not query:
+        raise HTTPException(status_code=422, detail="query must not be empty")
+    if depth not in ("quick", "standard", "deep"):
+        raise HTTPException(status_code=422, detail="depth must be quick, standard, or deep")
+
+    # Generate session_id upfront so we can return it immediately
+    research_session_id = datetime.now().strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:6]
+
+    def _run():
+        try:
+            from dotenv import load_dotenv
+            load_dotenv(PROJECT_ROOT / ".env")
+        except ImportError:
+            pass
+        from tools.research.orchestrator import run_research
+        run_research(query, depth, session_id=research_session_id, museum_id=museum_id)
+
+    t = threading.Thread(target=_run, daemon=True)
+    t.start()
+
+    return {"session_id": research_session_id, "status": "started", "query": query, "depth": depth}
+
+
+@router.get("/research")
+def list_research_sessions(limit: int = Query(20, ge=1, le=100)):
+    """Return recent research sessions (all phases)."""
+    if not RESEARCH_DB_PATH.exists():
+        return {"sessions": []}
+    conn = _get_research_db()
+    try:
+        rows = conn.execute(
+            """SELECT session_id, phase, query, depth, started_at, updated_at
+               FROM research_sessions
+               ORDER BY updated_at DESC
+               LIMIT ?""",
+            (limit,),
+        ).fetchall()
+        return {
+            "sessions": [
+                {
+                    "session_id": r[0],
+                    "phase": r[1],
+                    "query": r[2],
+                    "depth": r[3],
+                    "started_at": r[4],
+                    "updated_at": r[5],
+                }
+                for r in rows
+            ]
+        }
+    finally:
+        conn.close()
+
+
+@router.get("/research/{session_id}")
+def get_research_status(session_id: str):
+    """Return current phase and progress for a research session."""
+    if not RESEARCH_DB_PATH.exists():
+        raise HTTPException(status_code=404, detail="No research sessions found")
+    conn = _get_research_db()
+    try:
+        row = conn.execute(
+            "SELECT phase, query, depth, state_json, started_at, updated_at "
+            "FROM research_sessions WHERE session_id = ?",
+            (session_id,),
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+
+        phase, query, depth, state_json, started_at, updated_at = row
+
+        # Parse minimal progress counters from state_json without loading full state
+        try:
+            import json as _json
+            s = _json.loads(state_json)
+            progress = {
+                "search_calls": s.get("search_calls", 0),
+                "page_reads": s.get("page_reads", 0),
+                "llm_calls": s.get("llm_calls", 0),
+                "total_cost_usd": s.get("total_cost_usd", 0.0),
+                "excerpts_collected": len(s.get("excerpts", [])),
+                "error_message": s.get("error_message", ""),
+                "output_path": s.get("output_path", ""),
+            }
+        except Exception:
+            progress = {}
+
+        return {
+            "session_id": session_id,
+            "phase": phase,
+            "query": query,
+            "depth": depth,
+            "started_at": started_at,
+            "updated_at": updated_at,
+            "progress": progress,
+        }
+    finally:
+        conn.close()
+
+
+@router.get("/research/{session_id}/report")
+def get_research_report(session_id: str):
+    """Return the final markdown report for a completed research session."""
+    if not RESEARCH_DB_PATH.exists():
+        raise HTTPException(status_code=404, detail="No research sessions found")
+    conn = _get_research_db()
+    try:
+        row = conn.execute(
+            "SELECT phase, state_json FROM research_sessions WHERE session_id = ?",
+            (session_id,),
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+
+        phase, state_json = row
+        if phase not in ("done", "synthesis"):
+            return {"session_id": session_id, "phase": phase, "report": None,
+                    "message": f"Research still in progress (phase: {phase})"}
+
+        # Try to read the report from disk (preferred — no size limit)
+        try:
+            import json as _json
+            s = _json.loads(state_json)
+            output_path = s.get("output_path", "")
+            if output_path and Path(output_path).exists():
+                report_text = Path(output_path).read_text()
+                return {"session_id": session_id, "phase": phase, "report": report_text,
+                        "output_path": output_path}
+        except Exception:
+            pass
+
+        # Fallback: return from state_json (may be truncated for very large reports)
+        try:
+            import json as _json
+            s = _json.loads(state_json)
+            report_text = s.get("final_report", "")
+            if report_text:
+                return {"session_id": session_id, "phase": phase, "report": report_text}
+        except Exception:
+            pass
+
+        raise HTTPException(status_code=404, detail="Report not yet available")
     finally:
         conn.close()

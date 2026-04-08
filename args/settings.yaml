@@ -59,3 +59,19 @@ output:
   verbose: false
   show_timestamps: true
   format: markdown
+
+deep_research:
+  search_provider: tavily   # tavily | serper
+  presets:
+    quick:
+      max_queries: 5
+      max_pages: 5
+      max_gap_iterations: 1
+    standard:
+      max_queries: 10
+      max_pages: 10
+      max_gap_iterations: 2
+    deep:
+      max_queries: 20
+      max_pages: 20
+      max_gap_iterations: 4

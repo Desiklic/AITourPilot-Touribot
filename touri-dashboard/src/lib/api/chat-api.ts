@@ -34,6 +34,14 @@ export async function getMessages(sessionId: string, sinceId?: number): Promise<
   return data.messages;
 }
 
+export async function renameSession(sessionId: string, title: string): Promise<void> {
+  await fetch(`${CHAT_API}/api/chat/sessions`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId, title }),
+  });
+}
+
 export async function deleteSession(sessionId: string): Promise<void> {
   await fetch(`${CHAT_API}/api/chat/sessions/${sessionId}`, { method: 'DELETE' });
 }

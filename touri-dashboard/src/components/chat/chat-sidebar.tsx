@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, Search, MoreHorizontal, Trash2 } from 'lucide-react';
-import { format, isToday, isYesterday } from 'date-fns';
-import { getSessions, deleteSession } from '@/lib/api/chat-api';
+import { Plus, Search, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { format, isToday, isYesterday, parseISO } from 'date-fns';
+import { getSessions, renameSession, deleteSession } from '@/lib/api/chat-api';
 import type { ChatSession } from '@/lib/api/chat-api';
 
 interface ChatSidebarProps {
@@ -14,16 +14,16 @@ interface ChatSidebarProps {
 }
 
 function formatDateLabel(dateStr: string): string {
-  const d = new Date(dateStr);
-  if (isToday(d)) return 'Today';
-  if (isYesterday(d)) return 'Yesterday';
-  return format(d, 'EEEE, MMM d');
+  const d = parseISO(dateStr);
+  if (isToday(d)) return 'TODAY';
+  if (isYesterday(d)) return 'YESTERDAY';
+  return format(d, 'EEEE, MMM d').toUpperCase();
 }
 
 function groupByDate(sessions: ChatSession[]): Map<string, ChatSession[]> {
   const groups = new Map<string, ChatSession[]>();
   for (const s of sessions) {
-    const key = format(new Date(s.last_message_at), 'yyyy-MM-dd');
+    const key = format(parseISO(s.last_message_at), 'yyyy-MM-dd');
     const list = groups.get(key) || [];
     list.push(s);
     groups.set(key, list);
@@ -33,14 +33,19 @@ function groupByDate(sessions: ChatSession[]): Map<string, ChatSession[]> {
 
 function SessionMenu({
   session,
+  onRename,
   onDelete,
   onClose,
 }: {
   session: ChatSession;
+  onRename: (sessionId: string, title: string) => void;
   onDelete: (sessionId: string) => void;
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [renaming, setRenaming] = useState(false);
+  const [title, setTitle] = useState(session.title || session.preview || '');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -50,10 +55,70 @@ function SessionMenu({
     return () => document.removeEventListener('mousedown', handleClick);
   }, [onClose]);
 
+  useEffect(() => {
+    if (renaming) inputRef.current?.focus();
+  }, [renaming]);
+
+  if (renaming) {
+    return (
+      <div
+        ref={ref}
+        className="absolute right-0 top-0 z-50 bg-[var(--sidebar)] border border-[var(--sidebar-border)] rounded-lg shadow-lg p-2 w-48"
+      >
+        <input
+          ref={inputRef}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && title.trim()) {
+              onRename(session.session_id, title.trim());
+              onClose();
+            }
+            if (e.key === 'Escape') onClose();
+          }}
+          className="w-full px-2 py-1 text-sm rounded bg-[var(--sidebar-accent)] border border-[var(--sidebar-border)] text-[var(--sidebar-accent-foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--sidebar-border)]"
+          placeholder="Chat title..."
+        />
+        <div className="flex gap-1 mt-1.5">
+          <button
+            onClick={() => {
+              if (title.trim()) {
+                onRename(session.session_id, title.trim());
+                onClose();
+              }
+            }}
+            className="flex-1 text-xs py-1 rounded bg-[var(--primary)] text-white hover:opacity-90"
+          >
+            Save
+          </button>
+          <button
+            onClick={onClose}
+            className="flex-1 text-xs py-1 rounded bg-[var(--sidebar-accent)] text-[var(--sidebar-foreground)] hover:opacity-80"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div ref={ref} className="absolute right-0 top-0 z-50 bg-[var(--sidebar)] border border-[var(--sidebar-border)] rounded-lg shadow-lg py-1 w-36">
+    <div
+      ref={ref}
+      className="absolute right-0 top-0 z-50 bg-[var(--sidebar)] border border-[var(--sidebar-border)] rounded-lg shadow-lg py-1 w-36"
+    >
       <button
-        onClick={() => { onDelete(session.session_id); onClose(); }}
+        onClick={() => setRenaming(true)}
+        className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)] transition-colors"
+      >
+        <Pencil className="w-3.5 h-3.5" />
+        Rename
+      </button>
+      <button
+        onClick={() => {
+          onDelete(session.session_id);
+          onClose();
+        }}
         className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
       >
         <Trash2 className="w-3.5 h-3.5" />
@@ -82,17 +147,24 @@ export function ChatSidebar({
     }
   }, []);
 
-  // Fetch on mount only; callers trigger a refresh by calling fetchSessions
-  // via the exposed ref pattern. In practice the page calls fetchSessions
-  // after each send/delete action.
+  // Fetch on mount and poll every 5 seconds
   useEffect(() => {
     fetchSessions();
+    const id = setInterval(fetchSessions, 5000);
+    return () => clearInterval(id);
   }, [fetchSessions]);
 
-  // Re-fetch when activeSessionId changes (new session created)
-  useEffect(() => {
-    fetchSessions();
-  }, [activeSessionId, fetchSessions]);
+  const handleRename = useCallback(
+    async (sessionId: string, title: string) => {
+      try {
+        await renameSession(sessionId, title);
+        await fetchSessions();
+      } catch {
+        // silently fail
+      }
+    },
+    [fetchSessions],
+  );
 
   const handleDelete = useCallback(
     async (sessionId: string) => {
@@ -172,7 +244,7 @@ export function ChatSidebar({
                 const label =
                   session.title ||
                   session.preview ||
-                  `Chat ${format(new Date(session.last_message_at), 'HH:mm')}`;
+                  `Chat ${format(parseISO(session.last_message_at), 'HH:mm')}`;
 
                 return (
                   <div key={session.session_id} className="relative">
@@ -212,6 +284,7 @@ export function ChatSidebar({
                     {menuSessionId === session.session_id && (
                       <SessionMenu
                         session={session}
+                        onRename={handleRename}
                         onDelete={handleDelete}
                         onClose={() => setMenuSessionId(null)}
                       />

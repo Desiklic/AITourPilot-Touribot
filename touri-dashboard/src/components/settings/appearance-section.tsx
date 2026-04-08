@@ -46,10 +46,10 @@ export function AppearanceSection() {
                   className={cn(
                     'h-16 w-full rounded-md border',
                     t.id === 'dark'
-                      ? 'bg-[#0f0f23] border-white/10'
+                      ? 'bg-[#0f172a] border-white/10'
                       : t.id === 'light'
-                        ? 'bg-[#f8f7f4] border-black/10'
-                        : 'bg-gradient-to-r from-[#0f0f23] to-[#f8f7f4] border-white/10'
+                        ? 'bg-[#f9fafb] border-black/10'
+                        : 'bg-gradient-to-r from-[#0f172a] to-[#f9fafb] border-white/10'
                   )}
                 />
                 <div className="flex items-center gap-2">

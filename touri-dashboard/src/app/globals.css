@@ -47,75 +47,76 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
-/* Dark theme as default - TouriBot Control Center */
+/* Light theme as default — TouriBot Campaign Command Center */
+/* Palette: Teal primary (#0d9488) with warm neutral backgrounds */
 :root {
   --radius: 0.625rem;
-  --background: #0f0f23;
-  --foreground: #e2e8f0;
-  --card: #1a1a2e;
-  --card-foreground: #e2e8f0;
-  --popover: #1a1a2e;
-  --popover-foreground: #e2e8f0;
-  --primary: #b07d56;
+  --background: #f9fafb;
+  --foreground: #1e293b;
+  --card: #ffffff;
+  --card-foreground: #1e293b;
+  --popover: #ffffff;
+  --popover-foreground: #1e293b;
+  --primary: #0d9488;
   --primary-foreground: #ffffff;
-  --secondary: #1e1e3a;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #1e293b;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #e2e8f0;
+  --accent-foreground: #1e293b;
+  --destructive: #dc2626;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #0d9488;
+  --chart-1: #0d9488;
+  --chart-2: #2563eb;
+  --chart-3: #d97706;
+  --chart-4: #7c3aed;
+  --chart-5: #dc2626;
+  --sidebar: #f8fafc;
+  --sidebar-foreground: #64748b;
+  --sidebar-primary: #0d9488;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e2e8f0;
+  --sidebar-accent-foreground: #1e293b;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #0d9488;
+}
+
+/* Dark theme */
+.dark {
+  --background: #0f172a;
+  --foreground: #e2e8f0;
+  --card: #1e293b;
+  --card-foreground: #e2e8f0;
+  --popover: #1e293b;
+  --popover-foreground: #e2e8f0;
+  --primary: #14b8a6;
+  --primary-foreground: #ffffff;
+  --secondary: #1e293b;
   --secondary-foreground: #e2e8f0;
-  --muted: #1e1e3a;
+  --muted: #1e293b;
   --muted-foreground: #94a3b8;
-  --accent: #252547;
+  --accent: #334155;
   --accent-foreground: #e2e8f0;
   --destructive: #ef4444;
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.12);
-  --ring: #b07d56;
-  --chart-1: #b07d56;
+  --ring: #14b8a6;
+  --chart-1: #14b8a6;
   --chart-2: #22c55e;
   --chart-3: #f59e0b;
   --chart-4: #3b82f6;
   --chart-5: #ef4444;
-  --sidebar: #0a0a1a;
+  --sidebar: #0c1222;
   --sidebar-foreground: #94a3b8;
-  --sidebar-primary: #b07d56;
+  --sidebar-primary: #14b8a6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1a1a2e;
+  --sidebar-accent: #1e293b;
   --sidebar-accent-foreground: #e2e8f0;
   --sidebar-border: rgba(255, 255, 255, 0.06);
-  --sidebar-ring: #b07d56;
-}
-
-/* Light theme overrides */
-.light {
-  --background: #f8f7f4;
-  --foreground: #2d2520;
-  --card: #fefdfb;
-  --card-foreground: #2d2520;
-  --popover: #fefdfb;
-  --popover-foreground: #2d2520;
-  --primary: #b07d56;
-  --primary-foreground: #ffffff;
-  --secondary: #f3f0eb;
-  --secondary-foreground: #2d2520;
-  --muted: #e8e4dd;
-  --muted-foreground: #6b6460;
-  --accent: #f0ebe4;
-  --accent-foreground: #2d2520;
-  --destructive: #dc2626;
-  --border: rgba(0, 0, 0, 0.12);
-  --input: rgba(0, 0, 0, 0.08);
-  --ring: #b07d56;
-  --chart-1: #b07d56;
-  --chart-2: #15803d;
-  --chart-3: #d97706;
-  --chart-4: #1d4ed8;
-  --chart-5: #dc2626;
-  --sidebar: #f3f0eb;
-  --sidebar-foreground: #6b6460;
-  --sidebar-primary: #b07d56;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e8e4dd;
-  --sidebar-accent-foreground: #2d2520;
-  --sidebar-border: rgba(0, 0, 0, 0.08);
-  --sidebar-ring: #b07d56;
+  --sidebar-ring: #14b8a6;
 }
 
 @layer base {
@@ -171,22 +172,8 @@
    Syntax highlighting theme variables
    ============================================================ */
 
-/* Dark mode (default) */
+/* Light mode syntax highlighting (default) */
 :root {
-  --hljs-bg: #1a1b26;
-  --hljs-fg: #a9b1d6;
-  --hljs-comment: #565f89;
-  --hljs-keyword: #bb9af7;
-  --hljs-string: #9ece6a;
-  --hljs-number: #ff9e64;
-  --hljs-function: #7aa2f7;
-  --hljs-variable: #c0caf5;
-  --hljs-type: #2ac3de;
-  --hljs-built-in: #e0af68;
-}
-
-/* Light mode overrides */
-.light {
   --hljs-bg: #ffffff;
   --hljs-fg: #24292e;
   --hljs-comment: #6a737d;
@@ -197,6 +184,20 @@
   --hljs-variable: #24292e;
   --hljs-type: #22863a;
   --hljs-built-in: #e36209;
+}
+
+/* Dark mode syntax highlighting */
+.dark {
+  --hljs-bg: #1a1b26;
+  --hljs-fg: #a9b1d6;
+  --hljs-comment: #565f89;
+  --hljs-keyword: #bb9af7;
+  --hljs-string: #9ece6a;
+  --hljs-number: #ff9e64;
+  --hljs-function: #7aa2f7;
+  --hljs-variable: #c0caf5;
+  --hljs-type: #2ac3de;
+  --hljs-built-in: #e0af68;
 }
 
 /* Apply highlight.js theme via CSS variables */

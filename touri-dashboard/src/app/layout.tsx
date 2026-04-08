@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="dark" storageKey="touribot-theme">
+        <ThemeProvider attribute="class" defaultTheme="light" storageKey="touribot-theme">
           <LayoutShell>
             {children}
           </LayoutShell>

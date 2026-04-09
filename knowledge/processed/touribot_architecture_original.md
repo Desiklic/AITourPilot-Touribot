@@ -703,8 +703,189 @@ These are loaded into context **only when the relevant skill is activated** -- n
 
 ---
 
-*Architecture spec complete. All decisions finalized through dialogue on March 17, 2026.*
+*Architecture spec complete. Original vision finalized March 17, 2026. Revised April 7, 2026 with implementation status.*
 
 *Based on: HenryBot v3.2 architecture, ChatProgElectron chat system, AITourPilot Content Factory pipeline, and Precision Partner Acquisition Engine strategy.*
 
-*Version 3 (Final) -- March 2026*
+---
+
+## Implementation Status (April 7, 2026)
+
+> **TouriBot Lite is BUILT and OPERATIONAL.** The original 50-70 hour vision was descoped to a focused 24-hour build delivering the core 20% that provides 80% of the value. The full platform vision is preserved above for Phase 5+ expansion.
+
+### What Was Built (April 7, 2026)
+
+| Component | Status | Lines | Notes |
+|-----------|--------|-------|-------|
+| **Memory system** (3-tier, from HenryBot) | Complete | ~1,712 | Hybrid FTS5 + vector search, cross-session persistence |
+| **Knowledge ingestion** | Complete | ~150 | 7 business docs processed into markdown |
+| **Email drafting engine** | Complete | ~450 | Personalizer + drafter + scorer |
+| **Lead pipeline database** | Complete | ~630 | 53 museums, 74 contacts imported |
+| **CLI interface** | Complete | ~270 | chat, draft, pipeline, status, recall, remember commands |
+| **soul.md identity** | Complete | 80 | Outreach co-pilot persona with email principles |
+| **Total** | **Operational** | **~8,864** | **4 phases, 51 files** |
+
+### What Was Deferred (Phase 5+)
+
+| Component | Original Estimate | Why Deferred |
+|-----------|------------------|--------------|
+| Next.js Dashboard | 25-30h | CLI pipeline command is sufficient for 50-150 leads |
+| Telegram Bot | 5-10h | Hermann works at desk for outreach |
+| Morning Briefing Daemon | 4h | python run.py status is the 2-minute equivalent |
+| Agent Swarm / Parallel Research | 10h | Single Claude call with rich context is adequate |
+| BullMQ + Redis Job Queue | 5h | Sequential processing fine at this scale |
+| Voice Input | 5h | Not needed for email drafting |
+| Apple Calendar Integration | 3h | Manual calendar management sufficient |
+| IMAP Reply Detection | 4h | Manual log-response command for now |
+
+### Architecture Decisions Revised
+
+| # | Original (March 17) | Revised (April 7) | Why |
+|---|---------------------|-------------------|-----|
+| 2 | Email: Manual from Apple Mail, Instantly.ai standby | Email: Drafts saved to output/emails/, sent from Zoho manually; Instantly.ai for cold outreach on .co | Warm reactivation from .com, cold from .co |
+| 6 | Build first (4 weeks), then campaign | Campaign starts immediately with Touri Lite; full platform as enhancement | Warm-up running, budget window open, leads aging |
+| 7 | Telegram: notifications only | CLI only for v1; Telegram deferred | Simpler, no deployment |
+
+### Codebase Location
+
+/Users/hermannkudlich/Documents/ClaudeProjects/AITourPilot-Touribot
+
+GitHub: Desiklic/AITourPilot-Touribot
+
+Architecture: ARCHITECTURE.md (780 lines)
+Build plan: docs_dev/20260407_TOURIBOT_BUILD_PLAN.md (609 lines)
+
+---
+
+## Phase 5 Requirements: CRM and Interaction History (Identified April 7, 2026)
+
+The BTU Cottbus experience (first inbound demo booking, no-show, follow-up email) revealed a gap in TouriBot: **the need to capture the full interaction narrative per lead**, not just stage transitions and email drafts.
+
+### The Problem
+
+When Dr. Owesle booked a demo, Hermann prepared extensive material: German talking points (3 topics), anticipated questions with answers (9 Q&As), demo scenarios (KHM Vermeer, Albertina Monet). She didn't show. He sent a follow-up email. All of this context -- the preparation, the no-show event, the follow-up, the research -- needs to be stored so that if she resurfaces in 3 months (or is introduced through someone else), every detail is instantly available.
+
+Currently TouriBot has:
+- Memory system (stores facts/events as searchable text blobs)
+- Lead pipeline (museum, contact, stage, basic interactions)
+
+What's missing:
+- **Structured interaction timeline** per lead (not just email drafts, but: meeting prep, no-shows, phone calls, LinkedIn interactions, conference encounters)
+- **Attachment/document linking** (the talking points doc, the demo prep, the follow-up email -- linked to the lead record)
+- **Reminder/follow-up scheduling** ("If no reply by April 14, send follow-up #2")
+- **Relationship mapping** (if Dr. Owesle later connects Hermann to the BLMK museum director, that relationship chain should be visible)
+- **Source tracking** ("How did this lead find us?" -- website booking, LinkedIn campaign, referral, conference)
+
+### Proposed CRM Enhancements for TouriBot
+
+**Priority 1: Interaction Timeline (extends existing interactions table)**
+
+Add to the interactions table or create a new timeline table:
+
+| Field | Purpose |
+|-------|---------|
+| event_type | email_sent, email_received, meeting_scheduled, meeting_held, meeting_noshow, linkedin_connection, linkedin_message, phone_call, referral_received, note |
+| content | Full text of the interaction (email body, meeting notes, prep material) |
+| attachments | JSON array of file paths (talking points, proposals, research docs) |
+| outcome | What happened as a result |
+| follow_up_date | When to follow up next |
+| follow_up_action | What to do ("send follow-up email", "check if replied", "call") |
+
+**Priority 2: Follow-up Queue**
+
+A daily check: "Which leads have a follow_up_date <= today?" Surface these in the status command.
+
+**Priority 3: Source and Referral Tracking**
+
+Add to museums table: source_detail (e.g., "Google Calendar booking from website", "LinkedIn Spring 2025 campaign", "Referred by Museovation")
+
+**Priority 4: Relationship Graph**
+
+Simple table: person_a_id, person_b_id, relationship_type ("introduced_by", "colleague_at", "met_at_conference"). For later -- not needed until the network grows.
+
+### Example: How BTU Cottbus Should Look in TouriBot
+
+**Full timeline view (python run.py history "BTU Cottbus"):**
+
+- April 7, 08:35 -- INBOUND: Demo booked via Google Calendar by Dr. Miriam-Esther Owesle (oweslmir@b-tu.de)
+- April 7, 09:00 -- RESEARCH: Identified as Art History dept, researches "Museen im digitalen Wandel". BTU has Kunst & Campus program with QR tours, BLMK collaboration, UNESCO Heritage Studies program.
+- April 7, 10:00 -- PREP: Created talking points (3 topics in German), anticipated questions (9 Q&As), demo scenarios (KHM + Albertina)
+- April 7, 14:00 -- MEETING_NOSHOW: Dr. Owesle did not appear for scheduled demo
+- April 7, 14:15 -- EMAIL_SENT: Follow-up email from hermann@aitourpilot.com offering to reschedule
+- April 7 -- STATUS: Waiting for response. Follow up April 14 if no reply.
+
+This narrative is what makes TouriBot a real CRM, not just a pipeline tracker.
+
+### Build Estimate
+
+| Enhancement | Effort | Priority |
+|-------------|--------|----------|
+| Extended interaction timeline with event_type and attachments | 3-4h | High -- needed before first real outreach wave |
+| Follow-up queue in status command | 1-2h | High |
+| Source tracking field | 30min | Medium |
+| history command (full timeline per lead) | 2-3h | High |
+| Relationship graph | 2-3h | Low (Phase 6+) |
+
+Phase 5 CRM enhancements were **completed April 7, 2026** (4 commits: schema extension, history command, follow-up queue, timestamp fix). All features verified with BTU Cottbus data.
+
+---
+
+## Phase 6: Dashboard — Campaign Command Center (Planned)
+
+The CLI is operational but Hermann needs a visual interface. The dashboard combines proven components from FelixBot's dashboard (~60% reuse) with new museum-specific CRM views (~40% new).
+
+### Dashboard Views
+
+| View | Priority | Description | Source |
+|------|----------|-------------|--------|
+| **Pipeline CRM** | P0 | Kanban board (11 stages) + table view with museum detail panel | New |
+| **Chat** | P0 | Threaded conversations with Touri, streaming responses | FelixBot copy |
+| **Statistics** | P1 | Emails sent, reply rates, pipeline funnel, campaign progress | New |
+| **Calendar** | P1 | Follow-ups, demos, email send dates (FullCalendar) | FelixBot + new |
+| **Task Board** | P1 | Follow-ups due, emails to review, stale contacts | FelixBot kanban copy |
+| **Memory** | P2 | Searchable memory browser, curated facts, conversation logs | FelixBot copy |
+| **Settings** | P2 | Dark/light theme, model selection | FelixBot copy |
+
+### Tech Stack
+
+Next.js 16 (App Router), React 19, shadcn/ui, Tailwind CSS v4, Recharts v3, @hello-pangea/dnd v18, FullCalendar v6, next-themes, better-sqlite3 (direct SQLite reads from JS), FastAPI + sse-starlette (Python chat streaming backend).
+
+### Architecture
+
+The dashboard is a self-contained Next.js app in touri-dashboard/. It reads data from leads.db and memory.db via better-sqlite3 (no Python needed for reads). Chat streaming goes through a lightweight FastAPI server that wraps session.py. All writes except pipeline stage updates go through the Python CLI or FastAPI.
+
+### Build Estimate
+
+| Phase | What | Hours |
+|-------|------|-------|
+| D1: Foundation + Layout | Shell, navigation, theme, types | 4h |
+| D2: Pipeline CRM | Kanban + table + museum detail | 8h |
+| D3: Chat Interface | Streaming chat with FelixBot components | 6h |
+| D4: Statistics | Campaign metrics, funnel, activity timeline | 5h |
+| D5: Calendar + Tasks | FullCalendar, follow-up board | 5h |
+| D6: Memory + Settings | FelixBot copy, adapted paths | 3h |
+| D7: Polish + Integration | Cross-page navigation, responsive, startup | 4h |
+| **Total** | | **~35h (8-9 days)** |
+
+### Key Design Decisions
+
+- **FelixBot as base, not fork** -- copy components, adapt; don't carry FelixBot baggage
+- **SQLite direct reads from JS** -- better-sqlite3 reads leads.db/memory.db without Python
+- **FastAPI for chat only** -- streaming needs Python (Anthropic SDK); reads don't
+- **No authentication** -- local tool, single user
+- **Dark/light theme** -- next-themes from FelixBot (localStorage persistence)
+- **Kanban + Table toggle** -- some people prefer visual pipeline, some prefer data tables
+
+### Vision: The Campaign Command Center
+
+The dashboard is not just a prettier CLI. It is the place where Hermann:
+- Sees the full pipeline at a glance (how many museums at each stage)
+- Drills into any museum (full history, contacts, research, emails)
+- Talks to Touri with full context (drafts emails, scores responses, plans next moves)
+- Tracks campaign progress over time (funnel progression, reply rates, deals in motion)
+- Never misses a follow-up (calendar + task board surface what needs attention today)
+- Understands what works (statistics show which email approaches get replies)
+
+Full build plan: docs_dev/20260407_DASHBOARD_BUILD_PLAN.md
+
+*Version 6 (Dashboard Plan Added) -- April 7, 2026*

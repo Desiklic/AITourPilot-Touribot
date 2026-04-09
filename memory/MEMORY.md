@@ -8,11 +8,6 @@
 
 ## Auto-Promoted
 
-- [2026-04-07] Georgie Power at SS Great Britain had a meeting with us about a year ago. She seemed interested but neither side followed up.
-- [2026-04-07] [MUSEUM: Joanneum] Lisa Witschnig is the contact at Universalmuseum Joanneum in Graz, Austria. She prefers German communication.
-- [2026-04-07] Georgie Power is a contact at SS Great Britain [MUSEUM: SS Great Britain]
-- [2026-04-07] Georgie Power had a meeting with Hermann approximately one year ago
-- [2026-04-07] Georgie Power showed interest but there was no follow-up from either side - represents a reactivation opportunity
 - [2026-04-07] A reactivation email approach is appropriate for re-engaging Georgie Power
 - [2026-04-07] [MUSEUM: SS Great Britain] Received reply from Georgie Power, scored 5/5 (Meeting requested). Georgie is warm, references the prior relationship, and has directly proposed a meeting next week — this is a clear buying signal and an open door to re-engage. The conservation project mention is a useful context hook for the conversation.
 - [2026-04-07] INBOUND DEMO BOOKED: Miriam-Esther Owesle from Brandenburgische Technische Universität Cottbus (BTU), Germany. Email: oweslmir@b-tu.de. Booked a 30-min Museum AI Demo for April 7, 2026 at 14:00 CET via Google Calendar Appointment Schedule. First inbound demo booking. Source: likely found booking link on aitourpilot.com website. Need to research: does BTU Cottbus have a museum, exhibition space, or cultural collection?
@@ -34,3 +29,8 @@
 - [2026-04-09] Memory tags like [MUSEUM: Name] improve semantic search relevance but don't guarantee specific facts were saved to memory.db
 - [2026-04-09] Touri cannot execute code (python run.py recall commands) — Hermann must verify what's actually stored in memory.db directly
 - [2026-04-09] April 28, 2025 meeting date for SS Great Britain was not confirmed as saved in the memories retrieved for this session [MUSEUM: SS Great Britain]
+- [2026-04-09] Touri cannot access the filesystem and cannot open Excel files at local paths
+- [2026-04-09] Touri's contact memory includes: Georgie Power (SS Great Britain), Lisa Witschnig (Universalmuseum Joanneum), Dr. Miriam-Esther Owesle (BTU Cottbus)
+- [2026-04-09] Pipeline summary loaded: 55 museums total, 52 at Stage 0
+- [2026-04-09] 31 HubSpot warm leads and 43 MailerLite subscribers exist but have not been shared with Touri
+- [2026-04-09] To verify LinkedIn campaign contacts against Touri's system, Hermann must paste contact lists as text (name, institution, email) or export CSV from HubSpot rather than sharing file paths

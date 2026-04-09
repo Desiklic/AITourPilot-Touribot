@@ -129,6 +129,8 @@ Award + 28 Museums → Shown as capability → Builds confidence
 - Rich archives underutilized by current guides
 - Examples: La Pedrera, Casa Batllo, Rijksmuseum, Uffizi, Prado, Acropolis Museum
 
+> **Note on La Pedrera:** La Pedrera declined in a February 2026 meeting. Removed from active outreach. The case study remains usable as a reference point.
+
 **Tier 2 -- High Priority (Progressive Mid-Size):**
 - 50K-500K visitors/year
 - Active digital strategy
@@ -339,11 +341,13 @@ Each message serves a distinct psychological purpose. The sequence works across 
 
 ## Module 5: Automation Layer
 
+> **Update (April 7, 2026):** TouriBot Lite is now operational and handles Modules 3 (personalization), 4 (sequencing/drafting), and 6 (response scoring) via CLI commands.
+
 ### Recommended Stack (Cost-Effective)
 
 | Component | Tool | Cost | Purpose |
 |-----------|------|------|---------|
-| Email sequencing | **Instantly.ai** (Growth plan) | ~EUR 30/month | Warm-up + cold email sequencing + analytics on aitourpilot.co domain |
+| Email sequencing | **Instantly.ai** (Growth plan) | $47/month | Warm-up + cold email sequencing + analytics on aitourpilot.co domain |
 | LinkedIn touches | **Manual** (supported by AI-drafted messages) | Free | Personal connection requests + messages |
 | CRM / Pipeline | **TouriBot** (purpose-built platform) | Free (self-hosted) | 11-stage visual pipeline with AI research, response scoring, and task management |
 | AI personalization | **Claude / GPT** via API or direct | EUR 50-150 total | Generate per-lead insights |
@@ -695,7 +699,7 @@ Cost: EUR 50-200 via PR distribution services. ROI: massive credibility amplific
 
 | Category | Item | Cost |
 |----------|------|------|
-| **Tools** | Email sequencing (Instantly.ai Growth, 2 months) | ~EUR 60 |
+| **Tools** | Email sequencing — Instantly.ai Growth plan ($47/month) — connected and warm-up running since April 4, 2026 | $47/month |
 | | LinkedIn Sales Navigator (2 months) | EUR 160 |
 | | AI tokens (personalization) | EUR 50-150 |
 | **LinkedIn Ads** | Award boost + teasers + Lead Gen + retargeting | EUR 600 |
@@ -762,3 +766,31 @@ Everything starts with the LinkedIn award post. It sets the context. It gives pe
 *Based on: AI-Powered Precision Partner Acquisition Engine strategic dialogue, AITourPilot Content Factory Executive Summary, La Pedrera proposal and visitor calculations, competitor analysis, Spring 2025 campaign data, HubSpot/MailerLite subscriber lists, and AITourPilot knowledge base research.*
 
 *Compiled: March 2026*
+
+---
+
+## Implementation Status (April 7, 2026)
+
+### Module Readiness
+
+| Module | Status | Tool |
+|--------|--------|------|
+| 0. Infrastructure | Complete | Cloudflare DNS, Google Workspace, Instantly.ai |
+| 1. ICP Definition | Complete (documented) | This document |
+| 2. Lead Research | Partially complete | 74 contacts imported into TouriBot pipeline |
+| 3. Deep Personalization | Operational | TouriBot personalizer.py + Claude |
+| 4. Message Sequencing | Operational | TouriBot drafter.py (warm leads); Instantly.ai (cold leads) |
+| 5. Automation Layer | Operational | TouriBot + Instantly.ai |
+| 6. Response Handling | Operational | TouriBot scorer.py |
+
+### Blocking Items
+- App Store + Google Play release required before any outreach emails are sent
+- LinkedIn award announcement not yet posted
+
+### Key Updates Since March 14
+- La Pedrera declined (Feb 2026 meeting) — removed from active targets
+- Georgie Power (SS Great Britain) elevated to #1 priority — had a meeting ~1 year ago
+- TouriBot Lite built April 7 — handles email drafting with full business context and persistent memory
+- Instantly.ai warm-up running since April 4 on .co domain
+
+*Updated: April 7, 2026*

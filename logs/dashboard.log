@@ -15,3 +15,8 @@
  GET /chat 200 in 43ms (compile: 5ms, render: 39ms)
  GET /chat 200 in 23ms (compile: 1852µs, render: 22ms)
 ✓ Compiled in 152ms
+ GET /chat 200 in 243ms (compile: 40ms, render: 203ms)
+ GET /chat 200 in 117ms (compile: 59ms, render: 58ms)
+ GET /chat 200 in 38ms (compile: 2ms, render: 36ms)
+ GET /chat 200 in 22ms (compile: 2ms, render: 20ms)
+ GET /chat 200 in 215ms (compile: 12ms, render: 203ms)

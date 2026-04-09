@@ -72,6 +72,43 @@ output:
   show_timestamps: true
   format: markdown
 
+knowledge:
+  sources:
+    - path: ~/Desktop/AITourPilot Project/BUSINESS_CONTENT/wiki
+      glob: "**/*.html"
+      extractor: html_wiki
+      access: read
+      label: "Business Wiki"
+    - path: ~/Desktop/AITourPilot Project/Marketing Automation
+      glob: "**/*.{txt,md,pdf,docx}"
+      extractor: auto
+      access: read
+      label: "Marketing Materials"
+      exclude_patterns:
+        - "*.png"
+        - "*.jpg"
+        - "*.jpeg"
+        - "*.gif"
+        - "*.svg"
+        - ".git/**"
+        - "*.csv"
+        - "*.xlsx"
+    - path: ./docs_dev
+      glob: "**/*.md"
+      extractor: md
+      access: readwrite
+      label: "Development Docs"
+  output_dir: knowledge/processed
+  max_file_size_mb: 10
+
+calendar:
+  enabled: true
+  google:
+    enabled: true
+    token_file: "~/.touribot/google_token.json"
+    scopes:
+      - "https://www.googleapis.com/auth/calendar"
+
 deep_research:
   search_provider: tavily   # tavily | serper
   presets:

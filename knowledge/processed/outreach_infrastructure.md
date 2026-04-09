@@ -366,6 +366,8 @@ Before sending any email:
 
 ### Warm-Up Timeline
 
+> **Note (April 7, 2026):** Warm-up originally planned to start March 20. Actual warm-up start: **April 4, 2026** (2 weeks behind original plan). Instantly.ai warm-up is now running.
+
 | Week | Daily Volume | Activity |
 |------|-------------|----------|
 | **Week 1-2** | 5-10 emails/day | Send to known contacts: friends, colleagues, existing warm contacts from the 74-person list. Have real conversations -- **replies are the strongest reputation signal.** Subscribe to a few newsletters to generate inbound mail. Instantly.ai auto warm-up runs in parallel. |
@@ -387,7 +389,7 @@ Before sending any email:
 
 | Tool | Cost | Why |
 |------|------|-----|
-| **Instantly.ai** (Growth plan) | ~EUR 30/month | All-in-one: automated warm-up + cold email sequencing + analytics. Connects directly to Google Workspace. Handles mailbox rotation when scaling. |
+| **Instantly.ai** (Growth plan) | $47/month | All-in-one: automated warm-up + cold email sequencing + analytics. Connects directly to Google Workspace. Handles mailbox rotation when scaling. |
 
 ---
 
@@ -480,7 +482,7 @@ Before initiating the transfer, **document every DNS record currently at Edis.at
 
 | Item | Cost | Duration |
 |------|------|----------|
-| Instantly.ai (warm-up + sending) | ~EUR 30/month | Active outreach months |
+| Instantly.ai (warm-up + sending) | $47/month (Growth plan) | Active outreach months |
 | Email verification (ZeroBounce) | ~EUR 15-20/month | Active outreach months |
 | Vercel Hobby tier | EUR 0 | Ongoing |
 | **Total monthly** | **~EUR 45-50/month** | |
@@ -495,6 +497,16 @@ Before initiating the transfer, **document every DNS record currently at Edis.at
 ---
 
 ## Complete Execution Timeline
+
+> **Status as of April 7, 2026:**
+> - **Domains:** ALL DONE — 12 domains registered, all redirecting
+> - **Google Workspace:** DONE — hermann@aitourpilot.co live, 10/10 mail-tester score
+> - **SPF/DKIM/DMARC:** DONE
+> - **Instantly.ai:** DONE — Growth plan $47/mo, warm-up started April 4, 2026
+> - **.com transfer from Edis:** NOT YET STARTED (deadline May 24)
+> - **TouriBot:** BUILT — Phase 1–4 complete as of April 7
+> - **Outreach:** NOT YET STARTED — waiting for App Store / Google Play releases
+> - **LinkedIn campaign:** NOT YET STARTED
 
 ### Week 1 (March 20-28): Foundation
 
@@ -618,3 +630,22 @@ All infrastructure decisions made in this planning phase, with rationale:
 *Sources consulted: Lemlist Help Center, Woodpecker Blog, Instantly.ai Blog, LeadsMonky, Allegrow, GlockApps, Mailreach, Hunter.io, Google Workspace documentation, Cloudflare documentation, INWX.de pricing and TLD support.*
 
 *Compiled: March 2026 (updated March 20 with registrar strategy and pricing research)*
+
+---
+
+## Implementation Status (April 7, 2026)
+
+All infrastructure is operational:
+- 12 domains registered and redirecting (10 Cloudflare + .dk via INWX + .com at Edis pending transfer)
+- Google Workspace live on .co (10/10 mail-tester score)
+- Instantly.ai Growth plan ($47/mo) connected, warm-up running since April 4
+- TouriBot Lite built and operational (email drafting + pipeline tracking + persistent memory)
+- 74 contacts imported into pipeline (31 HubSpot + 43 MailerLite)
+
+Pending:
+- App Store + Google Play release (required before outreach begins)
+- .com transfer from Edis.at to Cloudflare (before May 24)
+- LinkedIn award announcement
+- DMARC tightening to p=quarantine (due ~April 18-May 2)
+
+*Updated: April 7, 2026*

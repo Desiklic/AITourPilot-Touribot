@@ -305,6 +305,44 @@ def _build_tier2_context(museum_id: int, museum_name: str) -> str:
     return _truncate_to_budget(result, tier2_max)
 
 
+# ── Marketing context loader ──────────────────────────────────────────────────
+
+
+def _load_marketing_context(max_files: int = 5, max_chars_per_file: int = 3000) -> list[str]:
+    """Load relevant marketing files from knowledge/processed/.
+
+    Finds all processed files produced from the Marketing Materials source
+    (prefixed with 'marketing_materials__') and loads the most relevant ones.
+    Returns a list of markdown strings, capped to avoid blowing the token budget.
+    """
+    try:
+        if not KNOWLEDGE_DIR.exists():
+            return []
+
+        marketing_files = sorted(KNOWLEDGE_DIR.glob("marketing_materials__*.md"))
+        if not marketing_files:
+            return []
+
+        parts = []
+        files_to_load = marketing_files[:max_files]
+
+        header_lines = [f"## Marketing Materials ({len(marketing_files)} files available, loading top {len(files_to_load)})"]
+        parts.append("\n".join(header_lines))
+
+        for f in files_to_load:
+            content = _load_file(f)
+            if content:
+                # Truncate per-file to keep total size manageable
+                if len(content) > max_chars_per_file:
+                    content = content[:max_chars_per_file] + "\n\n[... truncated ...]"
+                parts.append(content)
+
+        return parts
+    except Exception as e:
+        logger.debug(f"Marketing context load failed: {e}")
+        return []
+
+
 # ── Tier 3: Task-specific full context ───────────────────────────────────────
 
 
@@ -376,6 +414,11 @@ def _build_tier3_context(museum_id: int | None, task_types: set[str]) -> str:
         procurement = _load_file(KNOWLEDGE_DIR / "museum_procurement.md")
         if procurement:
             parts.append(procurement)
+
+    if "marketing" in task_types:
+        marketing_parts = _load_marketing_context()
+        if marketing_parts:
+            parts.extend(marketing_parts)
 
     if not parts:
         return ""
@@ -490,6 +533,13 @@ def _detect_task_type(user_message: str) -> set[str]:
                  "reactivation", "sequence", "template"]
     if any(kw in msg for kw in draft_kw):
         types.add("drafting")
+
+    # Marketing / campaign strategy
+    marketing_kw = ["marketing", "campaign", "linkedin", "newsletter", "automation",
+                    "content", "social", "advertising", "brand", "branding",
+                    "outreach strategy", "deck", "linkedin post"]
+    if any(kw in msg for kw in marketing_kw):
+        types.add("marketing")
 
     # Scoring responses / handling objections
     score_kw = ["score", "response", "reply", "replied", "objection", "decline",

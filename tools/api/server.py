@@ -2,6 +2,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from tools.api.chat_handler import router as chat_router
+from tools.api.calendar_routes import router as calendar_router
+from tools.api.file_handler import router as files_router
 
 app = FastAPI(title="TouriBot API", version="1.0.0")
 
@@ -14,6 +16,8 @@ app.add_middleware(
 )
 
 app.include_router(chat_router, prefix="/api/chat")
+app.include_router(calendar_router, prefix="/api/calendar")
+app.include_router(files_router, prefix="/api/files")
 
 if __name__ == "__main__":
     import uvicorn

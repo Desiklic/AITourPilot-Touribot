@@ -90,6 +90,14 @@ launchctl load   ~/Library/LaunchAgents/com.touribot.dashboard.plist
 | GET | /api/chat/research/{id} | Get research status |
 | GET | /api/chat/research/{id}/report | Get research report |
 
+## Memory System Behavior
+
+The `[MUSEUM: X]` tags in memory content are **plain text, not structured metadata**. There is no `tags` column in the live `memories` table. The schema is: `id, content, type, importance, created_at, updated_at`.
+
+Search uses `hybrid_search(query, limit=5)` — 70% vector similarity + 30% FTS5. The `[MUSEUM: X]` text helps ranking but is not a filter. Do not assume tag-based querying exists.
+
+Memory extraction (Haiku) sometimes saves low-quality entries (meta-commentary, uncertain statements). This is a known limitation — the extraction prompt could be improved but `tools/memory/` is off-limits.
+
 ## Files NOT to Modify
 
 These backend files are stable and must not be changed:

@@ -70,6 +70,16 @@ tail -f logs/api.log
 | `data/conversations.db` | Dashboard chat sessions | FastAPI only |
 | `data/research.db` | Deep research state checkpoints | FastAPI only |
 
+## Memory System — How It Actually Works
+
+Touri's memory uses `data/memory.db` with FTS5 full-text search + vector embeddings (hybrid_search: 70% vector + 30% FTS5). After every chat turn, Haiku extracts facts/events/insights and saves them.
+
+**The `[MUSEUM: X]` tag is NOT a structured field.** There is no `tags` column in the live schema. The tag is plain text inside the `content` field. It improves search ranking because FTS5 and vector search match on it, but there is no tag-based filtering. This is by design — pragmatic for 50-150 memories.
+
+**Memory extraction quality varies.** The Haiku model sometimes saves meta-commentary or uncertain statements as facts. When reviewing memories via `python run.py recall "<query>"`, look for junk entries and consider manually cleaning `data/memory.db` if needed.
+
+**Context injection:** `session.py` runs `hybrid_search(query, limit=5)` per chat turn and injects the top-5 matches as a `## Relevant Memories` block in the user message. Memories with score < 0.1 are filtered out.
+
 ## Constraints
 
 - Python 3.12 (Miniforge comfyenv)

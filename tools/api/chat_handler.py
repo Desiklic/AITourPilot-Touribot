@@ -207,22 +207,81 @@ async def stream_chat(req: StreamRequest):
             messages = list(history)
             messages.append({"role": "user", "content": augmented_input})
 
-            # --- stream from Anthropic ---
+            # --- stream from Anthropic (with tool-use agentic loop) ---
             client = _get_client()
             model, max_tokens, temperature = _chat_model_cfg()
 
+            from tools.api.tool_registry import ALL_TOOLS, handle_tool_call
+
+            # messages_for_api grows when tool rounds add assistant + tool_result turns
+            messages_for_api = list(messages)
             full_response = ""
+            max_tool_rounds = 5  # prevent infinite loops
+
             try:
-                with client.messages.stream(
-                    model=model,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    system=system_prompt,
-                    messages=messages,
-                ) as stream:
-                    for text in stream.text_stream:
-                        full_response += text
-                        yield _sse("text_delta", text=text)
+                for _round in range(max_tool_rounds):
+                    accumulated_text = ""
+                    final_message = None
+
+                    with client.messages.stream(
+                        model=model,
+                        max_tokens=max_tokens,
+                        temperature=temperature,
+                        system=system_prompt,
+                        messages=messages_for_api,
+                        tools=ALL_TOOLS,
+                    ) as stream:
+                        for event in stream:
+                            if event.type == "content_block_start":
+                                if event.content_block.type == "tool_use":
+                                    tool_name = event.content_block.name
+                                    yield _sse("status", text=f"Using {tool_name}...")
+                            elif event.type == "content_block_delta":
+                                if event.delta.type == "text_delta":
+                                    accumulated_text += event.delta.text
+                                    yield _sse("text_delta", text=event.delta.text)
+                                # input_json_delta: tool input building — no streaming needed
+
+                        # get_final_message() must be called inside the `with` block
+                        final_message = stream.get_final_message()
+
+                    full_response += accumulated_text
+
+                    # Check for tool_use blocks in the final message
+                    tool_use_blocks = [
+                        b for b in final_message.content if b.type == "tool_use"
+                    ]
+
+                    if not tool_use_blocks:
+                        # No tools called — streaming complete
+                        break
+
+                    # Execute each tool and build the tool_results message
+                    # Append the assistant turn (with tool_use blocks) to the conversation
+                    messages_for_api.append(
+                        {"role": "assistant", "content": final_message.content}
+                    )
+
+                    tool_results = []
+                    for tool_block in tool_use_blocks:
+                        logger.info(
+                            "Tool call: %s input=%s", tool_block.name, tool_block.input
+                        )
+                        result_text = handle_tool_call(tool_block.name, tool_block.input)
+                        logger.info(
+                            "Tool result: %s → %d chars", tool_block.name, len(result_text)
+                        )
+                        tool_results.append(
+                            {
+                                "type": "tool_result",
+                                "tool_use_id": tool_block.id,
+                                "content": result_text,
+                            }
+                        )
+
+                    messages_for_api.append({"role": "user", "content": tool_results})
+                    # Loop continues — next iteration streams the response with tool results
+
             except anthropic.APIError as exc:
                 logger.error("Anthropic API error: %s", exc)
                 yield _sse("error", message=str(exc))

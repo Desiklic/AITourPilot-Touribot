@@ -1,4 +1,4 @@
-const CHAT_API = process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:8765';
+const CHAT_API = process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:8766';
 
 export interface ChatSession {
   session_id: string;

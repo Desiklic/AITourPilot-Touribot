@@ -7,7 +7,7 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
-  title: 'TouriBot — Campaign Command Center',
+  title: 'TouriBot',
   description: 'Museum outreach pipeline and AI-powered email drafting',
 };
 

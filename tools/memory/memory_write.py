@@ -43,11 +43,10 @@ def append_to_log(content: str, memory_type: str, importance: int):
 
     timestamp = datetime.now().strftime("%H:%M:%S")
     type_marker = {
-        "event": "[event]",
-        "fact": "[fact]",
-        "insight": "[insight]",
-        "error": "[error]"
-    }.get(memory_type, "[note]")
+        "fact": "📌", "event": "📅", "insight": "💡", "error": "⚠️",
+        "contact_intel": "👤", "museum_intel": "🏛️", "interaction": "💬",
+        "strategy": "🎯", "research": "🔬", "general": "📝"
+    }.get(memory_type, "📝")
 
     if not log_path.exists():
         header = f"# Daily Log - {datetime.now().strftime('%Y-%m-%d')}\n\n"
@@ -220,15 +219,27 @@ def append_to_memory_md(content: str, memory_type: str = "fact"):
 
 
 def write_memory(content: str, memory_type: str = "event",
-                 importance: int = 5, update_memory: bool = False):
-    """Write memory to all relevant locations."""
+                 importance: int = 5, update_memory: bool = False,
+                 museum_id: int = None, tags=None, source: str = None):
+    """Write memory to all relevant locations.
+
+    Args:
+        content: Text content to store.
+        memory_type: One of fact/event/insight/error (default: event).
+        importance: Score 1-10 (default: 5).
+        update_memory: Also append to MEMORY.md (default: False).
+        museum_id: Optional FK to leads.db museums.id.
+        tags: Optional list or JSON string of tag labels.
+        source: Optional provenance string (extraction/manual/research/cli).
+    """
     results = {}
 
     log_path = append_to_log(content, memory_type, importance)
     results["log"] = str(log_path)
 
     if add_memory:
-        db_result = add_memory(content, memory_type, importance)
+        db_result = add_memory(content, memory_type, importance,
+                               museum_id=museum_id, tags=tags, source=source)
         results["db"] = db_result
     else:
         results["db"] = "skipped (memory_db not available)"
@@ -244,7 +255,11 @@ def main():
     parser = argparse.ArgumentParser(description='Write to memory system')
     parser.add_argument('--content', required=True, help='Content to write')
     parser.add_argument('--type', default='event',
-                       choices=['event', 'fact', 'insight', 'error'],
+                       choices=[
+                           'event', 'fact', 'insight', 'error',
+                           'contact_intel', 'museum_intel', 'interaction',
+                           'strategy', 'research', 'general',
+                       ],
                        help='Memory type')
     parser.add_argument('--importance', type=int, default=5,
                        help='Importance score 1-10')

@@ -34,6 +34,9 @@ logger = logging.getLogger(__name__)
 # Database path — relative to project root
 DB_PATH = Path(__file__).parent.parent.parent / "data" / "memory.db"
 
+# Leads database path (separate SQLite file for museum pipeline data)
+LEADS_DB_PATH = Path(__file__).parent.parent.parent / "data" / "leads.db"
+
 # Vector dimension for vec0 tables (all-MiniLM-L6-v2 outputs 384-dim)
 _VEC_DIM = 384
 # Module-level flag: migration runs once per process lifetime
@@ -216,8 +219,102 @@ def init_db():
         except Exception as e:
             logger.debug(f"vec0 table setup failed (falling back to blob search): {e}")
 
+    # ── Phase M1: add museum_id, tags, source columns (idempotent) ────────
+    for sql in [
+        "ALTER TABLE memories ADD COLUMN museum_id INTEGER",
+        "ALTER TABLE memories ADD COLUMN tags TEXT",
+        "ALTER TABLE memories ADD COLUMN source TEXT",
+    ]:
+        try:
+            cursor.execute(sql)
+        except Exception:
+            pass  # column already exists on subsequent runs
+
+    try:
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_memories_museum_id ON memories(museum_id)"
+        )
+    except Exception:
+        pass
+
     conn.commit()
+
+    # Backfill museum_id from [MUSEUM: X] text tags (idempotent)
+    _migrate_memories_v2(conn)
+
     return conn
+
+
+def _resolve_museum_id(name: str):
+    """Resolve a museum name to its integer ID in leads.db.
+
+    Opens a READ-ONLY connection to leads.db and does a case-insensitive
+    LIKE match against museums.name.
+
+    Returns int museum_id or None if:
+    - leads.db does not exist
+    - no match is found
+    (multiple matches: first row by ID is used)
+    """
+    try:
+        if not LEADS_DB_PATH.exists():
+            return None
+        conn = sqlite3.connect(f"file:{LEADS_DB_PATH}?mode=ro", uri=True)
+        row = conn.execute(
+            "SELECT id FROM museums WHERE LOWER(name) LIKE ? ORDER BY id ASC LIMIT 1",
+            (f"%{name.lower()}%",),
+        ).fetchone()
+        conn.close()
+        return int(row[0]) if row else None
+    except Exception:
+        return None
+
+
+def _migrate_memories_v2(conn: sqlite3.Connection):
+    """Idempotent backfill: set museum_id from [MUSEUM: X] text tags.
+
+    Only processes rows where museum_id IS NULL and content contains a
+    [MUSEUM: ...] tag.  Logs any memories where the tag was found but no
+    matching museum exists in leads.db.
+    """
+    try:
+        rows = conn.execute(
+            "SELECT id, content FROM memories WHERE museum_id IS NULL AND content LIKE '%[MUSEUM:%'"
+        ).fetchall()
+    except Exception as e:
+        logger.debug(f"_migrate_memories_v2 query failed: {e}")
+        return
+
+    pattern = re.compile(r'\[MUSEUM:\s*(.+?)\]')
+    updated = 0
+    unmatched = []
+
+    for mem_id, content in rows:
+        match = pattern.search(content)
+        if not match:
+            continue
+        museum_name = match.group(1).strip()
+        museum_id = _resolve_museum_id(museum_name)
+        if museum_id is not None:
+            try:
+                conn.execute(
+                    "UPDATE memories SET museum_id = ? WHERE id = ?",
+                    (museum_id, mem_id),
+                )
+                updated += 1
+            except Exception as e:
+                logger.debug(f"Failed to update museum_id for memory {mem_id}: {e}")
+        else:
+            unmatched.append((mem_id, museum_name))
+
+    if updated:
+        conn.commit()
+        logger.info(f"_migrate_memories_v2: backfilled museum_id for {updated} memories")
+
+    for mem_id, museum_name in unmatched:
+        logger.debug(
+            f"_migrate_memories_v2: memory {mem_id} has [MUSEUM: {museum_name}] but no match in leads.db"
+        )
 
 
 def _migrate_once(conn: sqlite3.Connection):
@@ -411,11 +508,22 @@ def _embed_on_write(memory_id: int, content: str):
         logger.debug(f"Embedding generation skipped for memory {memory_id}: {e}")
 
 
-def _vector_search(query: str, limit: int = 20) -> list:
-    """Find memories by vector similarity. Uses sqlite-vec vec0 if available, else blob loop."""
+def _vector_search(query: str, limit: int = 20, museum_id: int = None) -> list:
+    """Find memories by vector similarity. Uses sqlite-vec vec0 if available, else blob loop.
+
+    Args:
+        query: Search query string.
+        limit: Maximum number of results to return.
+        museum_id: Optional post-filter — only keep results whose museum_id matches.
+                   The vec0 KNN query does not support WHERE on non-embedding columns,
+                   so filtering is done in Python after retrieval.
+    """
     query_vec, _ = _get_embedding(query)
     if query_vec is None:
         return []
+
+    # Fetch more rows than needed so post-filtering still returns enough results
+    fetch_limit = limit * 3 if museum_id is not None else limit
 
     conn = init_db()
 
@@ -424,44 +532,52 @@ def _vector_search(query: str, limit: int = 20) -> list:
         try:
             query_blob = _serialize_embedding(query_vec)
             rows = conn.execute("""
-                SELECT v.memory_id, v.distance, m.content, m.type, m.importance, m.created_at
+                SELECT v.memory_id, v.distance, m.content, m.type, m.importance, m.created_at,
+                       m.museum_id, m.tags, m.source
                 FROM vec_memories v
                 JOIN memories m ON m.id = v.memory_id
                 WHERE v.embedding MATCH ? AND k = ?
                 ORDER BY v.distance
-            """, (query_blob, limit)).fetchall()
+            """, (query_blob, fetch_limit)).fetchall()
             conn.close()
             results = []
-            for mem_id, distance, content, mtype, importance, created_at in rows:
+            for mem_id, distance, content, mtype, importance, created_at, mid, tags, src in rows:
                 similarity = max(0.0, 1.0 - (distance * distance) / 2.0)
                 results.append({
                     "id": mem_id, "content": content, "type": mtype,
                     "importance": importance, "created_at": created_at,
+                    "museum_id": mid, "tags": tags, "source": src,
                     "similarity": similarity,
                 })
-            return results
+            if museum_id is not None:
+                results = [r for r in results if r.get("museum_id") == museum_id]
+            return results[:limit]
         except Exception as e:
             logger.debug(f"vec0 memory search fell back to blob loop: {e}")
 
     # Fallback: Python cosine loop over all stored blobs
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT e.memory_id, e.embedding, e.dim, m.content, m.type, m.importance, m.created_at
+        SELECT e.memory_id, e.embedding, e.dim, m.content, m.type, m.importance, m.created_at,
+               m.museum_id, m.tags, m.source
         FROM memory_embeddings e
         JOIN memories m ON m.id = e.memory_id
     """)
     results = []
     for row in cursor.fetchall():
-        mem_id, emb_blob, dim, content, mtype, importance, created_at = row
+        mem_id, emb_blob, dim, content, mtype, importance, created_at, mid, tags, src = row
         stored_vec = _deserialize_embedding(emb_blob, dim)
         similarity = _cosine_similarity(query_vec, stored_vec)
         results.append({
             "id": mem_id, "content": content, "type": mtype,
             "importance": importance, "created_at": created_at,
+            "museum_id": mid, "tags": tags, "source": src,
             "similarity": similarity,
         })
     conn.close()
     results.sort(key=lambda x: x["similarity"], reverse=True)
+    if museum_id is not None:
+        results = [r for r in results if r.get("museum_id") == museum_id]
     return results[:limit]
 
 
@@ -558,59 +674,92 @@ def _apply_mmr(scored: list, mmr_lambda: float, limit: int) -> list:
     return selected
 
 
-def hybrid_search(query: str, limit: int = 10, include_sessions: bool = True) -> list:
-    """Hybrid search: 70% vector similarity + 30% FTS5 BM25.
+def _rrf_merge(ranked_lists: list, k: int = 60) -> list:
+    """Reciprocal Rank Fusion: merge multiple ranked lists into one.
 
-    Searches both memory entries and session transcript chunks.
-    Falls back to FTS5-only if embeddings are unavailable.
+    RRF score for document d = sum over lists L of: 1 / (k + rank_L(d))
+    where k=60 is the standard constant from Cormack et al. 2009.
+
+    Each ranked_list must be a list of dicts with an "id" key.
+    The id can be any hashable type (int for memories, str like "session:N" for chunks).
+    """
+    scores: dict = {}   # id -> cumulative RRF score
+    docs: dict = {}     # id -> document dict
+
+    for ranked_list in ranked_lists:
+        for rank, doc in enumerate(ranked_list):
+            doc_id = doc["id"]
+            rrf_score = 1.0 / (k + rank + 1)  # rank is 0-indexed
+            scores[doc_id] = scores.get(doc_id, 0.0) + rrf_score
+            if doc_id not in docs:
+                docs[doc_id] = doc
+
+    result = []
+    for doc_id, cumulative_score in scores.items():
+        entry = dict(docs[doc_id])
+        entry["score"] = round(cumulative_score, 6)
+        result.append(entry)
+
+    result.sort(key=lambda x: x["score"], reverse=True)
+    return result
+
+
+def hybrid_search(query: str, limit: int = 10, include_sessions: bool = True,
+                  museum_id: int = None) -> list:
+    """Hybrid search using Reciprocal Rank Fusion (RRF) over vector + FTS5 results.
+
+    Merges ranked lists from multiple retrievers (vector search, FTS5, session chunks)
+    using RRF instead of a fixed 70/30 weighted score. RRF scores are in the range
+    ~0.001–0.03 (much smaller than the old 0–1 range).
+
+    When museum_id is provided, runs two parallel searches:
+      - Museum-filtered search (higher priority by appearing first in ranked_lists)
+      - Global search (catches cross-museum strategic insights)
+
+    Args:
+        query: Search query string.
+        limit: Maximum number of results (default 10).
+        include_sessions: Include session transcript chunks (default True).
+        museum_id: Optional — prioritise memories for this museum.
     """
     settings = _get_search_settings()
 
     qe_cfg = settings.get("query_expansion", {})
     fts_query = _expand_query(query) if qe_cfg.get("enabled", False) else query
 
-    fts_results = search_memories(fts_query, limit=limit * 2)
-    for r in fts_results:
-        r.setdefault("source", "memory")
+    # ── Build ranked lists for RRF ────────────────────────────────────────
+    ranked_lists: list = []
 
-    vector_results = _vector_search(query, limit=limit * 2)
-    for r in vector_results:
-        r.setdefault("source", "memory")
+    if museum_id is not None:
+        # Museum-specific lists first (RRF naturally boosts docs that appear
+        # in multiple lists; placing museum lists first gives them a slight edge
+        # when there is a tie in rank position)
+        museum_vec = _vector_search(query, limit=limit * 2, museum_id=museum_id)
+        museum_fts = search_memories(fts_query, limit=limit * 2, museum_id=museum_id)
+        global_vec = _vector_search(query, limit=limit)
+        global_fts = search_memories(fts_query, limit=limit)
+        for r in museum_vec + museum_fts + global_vec + global_fts:
+            r.setdefault("source", "memory")
+        ranked_lists = [museum_vec, museum_fts, global_vec, global_fts]
+    else:
+        vec_results = _vector_search(query, limit=limit * 2)
+        fts_results = search_memories(fts_query, limit=limit * 2)
+        for r in vec_results + fts_results:
+            r.setdefault("source", "memory")
+        ranked_lists = [vec_results, fts_results]
 
     if include_sessions:
-        session_fts = _session_fts_search(fts_query, limit=limit)
-        for r in session_fts:
-            r.setdefault("source", "session")
         session_vec = _session_vector_search(query, limit=limit)
-        for r in session_vec:
+        session_fts = _session_fts_search(fts_query, limit=limit)
+        for r in session_vec + session_fts:
             r.setdefault("source", "session")
-        fts_results.extend(session_fts)
-        vector_results.extend(session_vec)
+        ranked_lists.append(session_vec)
+        ranked_lists.append(session_fts)
 
-    if not vector_results:
-        result_list = []
-        for i, r in enumerate(fts_results):
-            entry = dict(r)
-            entry["score"] = round(1.0 - (i / max(len(fts_results), 1)), 4)
-            result_list.append(entry)
-    else:
-        fts_scores = {r["id"]: 1.0 - (i / max(len(fts_results), 1)) for i, r in enumerate(fts_results)}
-        vec_scores = {r["id"]: (r.get("similarity", 0.0) + 1.0) / 2.0 for r in vector_results}
+    # ── RRF merge ─────────────────────────────────────────────────────────
+    result_list = _rrf_merge(ranked_lists)
 
-        all_results = {}
-        for r in fts_results:
-            all_results[r["id"]] = r
-        for r in vector_results:
-            if r["id"] not in all_results:
-                all_results[r["id"]] = {k: v for k, v in r.items() if k != "similarity"}
-
-        result_list = []
-        for mid, result in all_results.items():
-            entry = {k: v for k, v in result.items() if k != "similarity"}
-            entry["score"] = round(0.7 * vec_scores.get(mid, 0.0) + 0.3 * fts_scores.get(mid, 0.0), 4)
-            result_list.append(entry)
-        result_list.sort(key=lambda x: x["score"], reverse=True)
-
+    # ── Post-processing (temporal decay, MMR) — operate on score field ────
     td_cfg = settings.get("temporal_decay", {})
     if td_cfg.get("enabled", False):
         result_list = _apply_temporal_decay(
@@ -858,8 +1007,26 @@ def prune_old_session_chunks(retention_days: int = 30):
 _SEMANTIC_DEDUP_THRESHOLD = 0.92
 
 
-def add_memory(content: str, memory_type: str = "fact", importance: int = 5):
-    """Add a new memory entry with semantic deduplication."""
+def add_memory(content: str, memory_type: str = "fact", importance: int = 5,
+               museum_id: int = None, tags=None, source: str = None):
+    """Add a new memory entry with semantic deduplication.
+
+    Args:
+        content: Text content of the memory.
+        memory_type: One of fact/event/insight/error (default: fact).
+        importance: Score 1-10 (default: 5).
+        museum_id: Optional FK to leads.db museums.id (logical FK, not enforced).
+        tags: Optional list or JSON string of tag labels (e.g. ["outreach", "pricing"]).
+        source: Optional provenance string: "extraction", "manual", "research", "cli".
+    """
+    # Normalise tags to JSON string
+    tags_json: str | None = None
+    if tags is not None:
+        if isinstance(tags, list):
+            tags_json = json.dumps(tags)
+        else:
+            tags_json = str(tags)
+
     similar = _vector_search(content, limit=3)
     if similar and similar[0].get("similarity", 0.0) >= _SEMANTIC_DEDUP_THRESHOLD:
         existing_id = similar[0]["id"]
@@ -875,41 +1042,66 @@ def add_memory(content: str, memory_type: str = "fact", importance: int = 5):
         conn.commit()
         conn.close()
         _embed_on_write(existing_id, content)
-        return {"id": existing_id, "content": content, "type": memory_type, "importance": importance}
+        return {"id": existing_id, "content": content, "type": memory_type, "importance": importance,
+                "museum_id": museum_id, "tags": tags_json, "source": source}
 
     conn = init_db()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO memories (content, type, importance, created_at) VALUES (?, ?, ?, ?)",
-        (content, memory_type, importance, datetime.now().isoformat()),
+        "INSERT INTO memories (content, type, importance, museum_id, tags, source, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (content, memory_type, importance, museum_id, tags_json, source, datetime.now().isoformat()),
     )
     conn.commit()
     memory_id = cursor.lastrowid
     conn.close()
 
     _embed_on_write(memory_id, content)
-    return {"id": memory_id, "content": content, "type": memory_type, "importance": importance}
+    return {"id": memory_id, "content": content, "type": memory_type, "importance": importance,
+            "museum_id": museum_id, "tags": tags_json, "source": source}
 
 
-def search_memories(query: str, limit: int = 20):
-    """Search memories using FTS5 full-text search with LIKE fallback."""
+def search_memories(query: str, limit: int = 20, museum_id: int = None):
+    """Search memories using FTS5 full-text search with LIKE fallback.
+
+    Args:
+        query: Search query string.
+        limit: Maximum number of results (default 20).
+        museum_id: Optional filter — only return memories for this museum.
+    """
     conn = init_db()
     cursor = conn.cursor()
 
     try:
-        cursor.execute(
-            """
-            SELECT m.id, m.content, m.type, m.importance, m.created_at
-            FROM memories_fts f
-            JOIN memories m ON m.id = f.rowid
-            WHERE memories_fts MATCH ?
-            ORDER BY f.rank, m.importance DESC
-            LIMIT ?
-            """,
-            (query, limit)
-        )
+        if museum_id is not None:
+            cursor.execute(
+                """
+                SELECT m.id, m.content, m.type, m.importance, m.created_at,
+                       m.museum_id, m.tags, m.source
+                FROM memories_fts f
+                JOIN memories m ON m.id = f.rowid
+                WHERE memories_fts MATCH ? AND m.museum_id = ?
+                ORDER BY f.rank, m.importance DESC
+                LIMIT ?
+                """,
+                (query, museum_id, limit)
+            )
+        else:
+            cursor.execute(
+                """
+                SELECT m.id, m.content, m.type, m.importance, m.created_at,
+                       m.museum_id, m.tags, m.source
+                FROM memories_fts f
+                JOIN memories m ON m.id = f.rowid
+                WHERE memories_fts MATCH ?
+                ORDER BY f.rank, m.importance DESC
+                LIMIT ?
+                """,
+                (query, limit)
+            )
         results = [
-            {"id": r[0], "content": r[1], "type": r[2], "importance": r[3], "created_at": r[4]}
+            {"id": r[0], "content": r[1], "type": r[2], "importance": r[3], "created_at": r[4],
+             "museum_id": r[5], "tags": r[6], "source": r[7]}
             for r in cursor.fetchall()
         ]
         if results:
@@ -918,18 +1110,31 @@ def search_memories(query: str, limit: int = 20):
     except Exception:
         pass
 
-    cursor.execute(
-        """
-        SELECT id, content, type, importance, created_at
-        FROM memories
-        WHERE content LIKE ?
-        ORDER BY importance DESC, created_at DESC
-        LIMIT ?
-        """,
-        (f"%{query}%", limit)
-    )
+    if museum_id is not None:
+        cursor.execute(
+            """
+            SELECT id, content, type, importance, created_at, museum_id, tags, source
+            FROM memories
+            WHERE content LIKE ? AND museum_id = ?
+            ORDER BY importance DESC, created_at DESC
+            LIMIT ?
+            """,
+            (f"%{query}%", museum_id, limit)
+        )
+    else:
+        cursor.execute(
+            """
+            SELECT id, content, type, importance, created_at, museum_id, tags, source
+            FROM memories
+            WHERE content LIKE ?
+            ORDER BY importance DESC, created_at DESC
+            LIMIT ?
+            """,
+            (f"%{query}%", limit)
+        )
     results = [
-        {"id": r[0], "content": r[1], "type": r[2], "importance": r[3], "created_at": r[4]}
+        {"id": r[0], "content": r[1], "type": r[2], "importance": r[3], "created_at": r[4],
+         "museum_id": r[5], "tags": r[6], "source": r[7]}
         for r in cursor.fetchall()
     ]
 
@@ -937,26 +1142,39 @@ def search_memories(query: str, limit: int = 20):
     return results
 
 
-def list_memories(limit: int = 20, memory_type: str = None):
-    """List recent memories."""
+def list_memories(limit: int = 20, memory_type: str = None, museum_id: int = None):
+    """List recent memories.
+
+    Args:
+        limit: Maximum number of results (default 20).
+        memory_type: Optional filter by memory type.
+        museum_id: Optional filter — only return memories for this museum.
+    """
     conn = init_db()
     cursor = conn.cursor()
 
-    if memory_type:
-        cursor.execute(
-            "SELECT id, content, type, importance, created_at FROM memories "
-            "WHERE type = ? ORDER BY created_at DESC LIMIT ?",
-            (memory_type, limit)
-        )
-    else:
-        cursor.execute(
-            "SELECT id, content, type, importance, created_at FROM memories "
-            "ORDER BY created_at DESC LIMIT ?",
-            (limit,)
-        )
+    base_select = (
+        "SELECT id, content, type, importance, created_at, museum_id, tags, source "
+        "FROM memories"
+    )
 
+    conditions = []
+    params = []
+    if memory_type:
+        conditions.append("type = ?")
+        params.append(memory_type)
+    if museum_id is not None:
+        conditions.append("museum_id = ?")
+        params.append(museum_id)
+
+    where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+    sql = base_select + where + " ORDER BY created_at DESC LIMIT ?"
+    params.append(limit)
+
+    cursor.execute(sql, params)
     results = [
-        {"id": r[0], "content": r[1], "type": r[2], "importance": r[3], "created_at": r[4]}
+        {"id": r[0], "content": r[1], "type": r[2], "importance": r[3], "created_at": r[4],
+         "museum_id": r[5], "tags": r[6], "source": r[7]}
         for r in cursor.fetchall()
     ]
     conn.close()
@@ -964,9 +1182,15 @@ def list_memories(limit: int = 20, memory_type: str = None):
 
 
 def delete_memory(memory_id: int):
-    """Delete a memory by ID."""
+    """Delete a memory by ID, cleaning up orphaned embeddings first."""
     conn = init_db()
     cursor = conn.cursor()
+    # Clean up embeddings before removing the parent row (FTS trigger handles memories_fts)
+    cursor.execute("DELETE FROM memory_embeddings WHERE memory_id = ?", (memory_id,))
+    try:
+        cursor.execute("DELETE FROM vec_memories WHERE memory_id = ?", (memory_id,))
+    except Exception:
+        pass  # vec0 table may not exist
     cursor.execute("DELETE FROM memories WHERE id = ?", (memory_id,))
     deleted = cursor.rowcount
     conn.commit()

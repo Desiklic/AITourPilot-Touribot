@@ -35,7 +35,7 @@ def _search_museum_memories(museum_name: str, contact_name: str = "") -> list[di
         # Search by museum name
         museum_results = hybrid_search(museum_name, limit=10, include_sessions=True)
         for r in museum_results:
-            if r.get("score", 0) >= 0.1 and r["id"] not in seen_ids:
+            if r.get("score", 0) >= 0.005 and r["id"] not in seen_ids:  # RRF scores are ~0.001-0.03
                 results.append(r)
                 seen_ids.add(r["id"])
 
@@ -43,7 +43,7 @@ def _search_museum_memories(museum_name: str, contact_name: str = "") -> list[di
         if contact_name:
             contact_results = hybrid_search(contact_name, limit=5, include_sessions=True)
             for r in contact_results:
-                if r.get("score", 0) >= 0.1 and r["id"] not in seen_ids:
+                if r.get("score", 0) >= 0.005 and r["id"] not in seen_ids:  # RRF scores are ~0.001-0.03
                     results.append(r)
                     seen_ids.add(r["id"])
 
@@ -51,9 +51,26 @@ def _search_museum_memories(museum_name: str, contact_name: str = "") -> list[di
         tag_query = f"MUSEUM {museum_name}"
         tag_results = hybrid_search(tag_query, limit=5, include_sessions=True)
         for r in tag_results:
-            if r.get("score", 0) >= 0.1 and r["id"] not in seen_ids:
+            if r.get("score", 0) >= 0.005 and r["id"] not in seen_ids:  # RRF scores are ~0.001-0.03
                 results.append(r)
                 seen_ids.add(r["id"])
+
+        # Direct lookup of research memories by museum_id (Phase M5 bridge)
+        try:
+            from tools.leads.lead_db import get_museum
+            from tools.memory.memory_db import list_memories
+
+            museum_record = get_museum(museum_name)
+            if museum_record:
+                research_mems = list_memories(
+                    limit=10, memory_type="research", museum_id=museum_record["id"]
+                )
+                for r in research_mems:
+                    if r["id"] not in seen_ids:
+                        results.append(r)
+                        seen_ids.add(r["id"])
+        except Exception as e:
+            logger.debug(f"Research memory lookup failed: {e}")
 
         return results
 

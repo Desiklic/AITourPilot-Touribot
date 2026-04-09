@@ -6,6 +6,14 @@ memory:
   working_tier_max_chars: 5000
   episodic_expiry_days: 90
   pinned_min_importance: 10
+  curator:
+    enabled: true
+    expire_db_min_importance: 5
+    consolidation_threshold: 0.85
+    expire_types:
+      - interaction
+      - general
+      - event
 
 search:
   query_expansion:
@@ -28,6 +36,10 @@ session:
     retrieved_memories: 0.02
     history: 0.30
     reserved_for_response: 0.05
+    tier1_max_tokens: 4000
+    tier2_max_tokens: 4000
+    tier3_max_tokens: 8000
+    total_max_tokens: 16000
   end_of_session_summary: true
   min_messages_for_summary: 4
 
@@ -44,9 +56,9 @@ models:
     temperature: 0.6
   memory_extraction:
     provider: anthropic
-    model: claude-haiku-4-5-20251001
+    model: claude-sonnet-4-6
     max_tokens: 1024
-    temperature: 0.3
+    temperature: 0.2
 
 cost_caps:
   alerts:

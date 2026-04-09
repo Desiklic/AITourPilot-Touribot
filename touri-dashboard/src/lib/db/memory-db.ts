@@ -24,13 +24,13 @@ function getMemoryDb(): Database.Database | null {
   return db;
 }
 
-export function getMemories(type?: string, search?: string): Memory[] {
+export function getMemories(type?: string, search?: string, museumId?: number): Memory[] {
   const db = getMemoryDb();
   if (!db) return [];
 
   try {
     const conditions: string[] = [];
-    const params: string[] = [];
+    const params: (string | number)[] = [];
 
     if (type) {
       conditions.push('type = ?');
@@ -40,9 +40,13 @@ export function getMemories(type?: string, search?: string): Memory[] {
       conditions.push('content LIKE ?');
       params.push(`%${search}%`);
     }
+    if (museumId !== undefined && museumId !== null) {
+      conditions.push('museum_id = ?');
+      params.push(museumId);
+    }
 
     const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
-    const sql = `SELECT * FROM memories${whereClause} ORDER BY created_at DESC`;
+    const sql = `SELECT id, content, type, importance, museum_id, tags, source, created_at, updated_at FROM memories${whereClause} ORDER BY created_at DESC`;
 
     return db.prepare(sql).all(...params) as Memory[];
   } finally {

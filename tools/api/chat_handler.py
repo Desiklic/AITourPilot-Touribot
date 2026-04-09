@@ -17,6 +17,7 @@ from pydantic import BaseModel
 
 # Re-use the private helpers from session.py without modifying it.
 from tools.chat.session import (
+    _assemble_context,
     _build_system_prompt,
     _detect_task_type,
     _extract_and_save_memories,
@@ -189,19 +190,15 @@ async def stream_chat(req: StreamRequest):
             # --- load conversation history (clean messages only) ---
             history = _load_history(conn, session_id)
 
-            # --- build context ---
-            system_prompt = _build_system_prompt()
-            memory_context = _search_memory_context(user_message)
-            task_types = _detect_task_type(user_message)
-            knowledge_context = _load_knowledge_for_task(task_types, user_message)
+            # --- build tiered context ---
+            yield _sse("status", text="Loading context...")
+            system_prompt, additional_context, _museum_id = _assemble_context(user_message)
 
-            context_parts = [p for p in [memory_context, knowledge_context] if p]
-            if context_parts:
-                context_block = "\n\n".join(context_parts)
+            if additional_context:
                 augmented_input = (
                     f"{user_message}\n\n---\n"
                     "[Context — do not repeat this to the user, use it to inform your response]\n"
-                    f"{context_block}"
+                    f"{additional_context}"
                 )
             else:
                 augmented_input = user_message
@@ -386,6 +383,47 @@ async def rename_session(request: Request):
         )
         conn.commit()
         return {"renamed": True, "session_id": session_id, "title": title}
+    finally:
+        conn.close()
+
+
+@router.delete("/memory/{memory_id}")
+async def delete_memory_endpoint(memory_id: int):
+    """Delete a memory by ID from memory.db."""
+    from tools.memory.memory_db import delete_memory
+    result = delete_memory(memory_id)
+    return result
+
+
+@router.patch("/memory/{memory_id}")
+async def update_memory_endpoint(memory_id: int, request: Request):
+    """Update a memory's content, type, importance, or museum_id."""
+    body = await request.json()
+
+    allowed_fields = {"content", "type", "importance", "museum_id"}
+    updates = {k: v for k, v in body.items() if k in allowed_fields}
+    if not updates:
+        raise HTTPException(status_code=422, detail="No valid fields to update")
+
+    from tools.memory.memory_db import init_db
+    conn = init_db()
+    try:
+        set_clauses = ", ".join(f"{k} = ?" for k in updates)
+        values = list(updates.values())
+        values.append(memory_id)
+        conn.execute(
+            f"UPDATE memories SET {set_clauses}, updated_at = datetime('now') WHERE id = ?",
+            values,
+        )
+        conn.commit()
+        row = conn.execute(
+            "SELECT id, content, type, importance, museum_id, tags, source, created_at, updated_at FROM memories WHERE id = ?",
+            (memory_id,),
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail=f"Memory {memory_id} not found")
+        cols = ["id", "content", "type", "importance", "museum_id", "tags", "source", "created_at", "updated_at"]
+        return dict(zip(cols, row))
     finally:
         conn.close()
 

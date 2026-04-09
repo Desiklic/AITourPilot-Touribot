@@ -9,6 +9,7 @@ Final report saved to output/research/YYYYMMDD_MUSEUM_NAME.md.
 Research also saved to leads.db research table if museum_id is provided.
 """
 
+import json
 import logging
 import re
 import sqlite3
@@ -136,6 +137,9 @@ def run_research(query: str, depth: str = "standard",
             f"${state.total_cost_usd:.3f}"
         )
         _print(f"[{state.session_id}] Report: {state.output_path}")
+
+        # Bridge research findings to memory.db for hybrid search
+        _bridge_to_memory(state)
 
         # Save to leads.db research table if museum_id is known
         if state.museum_id:
@@ -284,6 +288,60 @@ def _print(message: str) -> None:
     """Print progress to console with timestamp."""
     ts = datetime.now().strftime("%H:%M:%S")
     print(f"[{ts}] {message}", flush=True)
+
+
+def _chunk_research_for_memory(report: str) -> list[dict]:
+    """Split research report into memory-sized findings.
+
+    Strategy 1: extract bullet-pointed findings (each bullet → one memory).
+    Strategy 2 (fallback): take the first 5 non-heading paragraphs.
+    Cap at 10 memories per research session.
+    """
+    chunks = []
+
+    # Strategy 1: bullet points (- or * prefixed lines)
+    bullets = re.findall(r'[-*]\s+(.+)', report)
+    for bullet in bullets:
+        text = bullet.strip()
+        if 20 < len(text) < 500:
+            chunks.append({"content": text, "importance": 6})
+
+    # Strategy 2: fallback to paragraphs when no usable bullets found
+    if not chunks:
+        paragraphs = [p.strip() for p in report.split('\n\n')
+                      if p.strip() and not p.strip().startswith('#')]
+        for para in paragraphs[:5]:
+            if 30 < len(para) < 500:
+                chunks.append({"content": para, "importance": 6})
+
+    # Cap at 10 memories per research session to avoid flooding
+    return chunks[:10]
+
+
+def _bridge_to_memory(state: ResearchState) -> None:
+    """Extract key findings from the final research report and write to memory.db.
+
+    Failure is silently logged — it must never crash the research pipeline.
+    """
+    if not state.final_report or not state.museum_id:
+        return
+
+    try:
+        from tools.memory.memory_write import write_memory
+
+        chunks = _chunk_research_for_memory(state.final_report)
+        for chunk in chunks:
+            write_memory(
+                content=chunk["content"],
+                memory_type="research",
+                importance=chunk.get("importance", 6),
+                museum_id=state.museum_id,
+                source="research",
+                tags=["research", "auto-bridged"],
+            )
+        _print(f"[{state.session_id}] Bridged {len(chunks)} research findings to memory.db")
+    except Exception as e:
+        logger.warning("Research->memory bridge failed: %s", e)
 
 
 def _save_to_leads_db(state: ResearchState) -> None:

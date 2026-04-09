@@ -1,0 +1,17 @@
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:4003
+- Network:       http://192.168.1.167:4003
+- Environments: .env.local
+
+✓ Starting...
+✓ Ready in 2.5s
+ GET / 307 in 1749ms (compile: 1630ms, render: 119ms)
+ GET / 307 in 713ms (compile: 445ms, render: 268ms)
+ GET /pipeline 200 in 2.7s (compile: 2.5s, render: 113ms)
+ GET /chat 200 in 952ms (compile: 937ms, render: 16ms)
+✓ Compiled in 103ms
+ GET /chat 200 in 236ms (compile: 77ms, render: 159ms)
+ GET /chat 200 in 175ms (compile: 103ms, render: 73ms)
+ GET /chat 200 in 43ms (compile: 5ms, render: 39ms)
+ GET /chat 200 in 23ms (compile: 1852µs, render: 22ms)
+✓ Compiled in 152ms

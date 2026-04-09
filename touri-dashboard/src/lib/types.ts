@@ -72,8 +72,11 @@ export interface Research {
 export interface Memory {
   id: number;
   content: string;
-  type: string;
+  type: string;  // contact_intel | museum_intel | interaction | strategy | research | general | fact | insight | event | error
   importance: number;
+  museum_id: number | null;     // FK to leads.db museums
+  tags: string | null;          // JSON array string
+  source: string | null;        // extraction | manual | research | cli
   created_at: string;
   updated_at: string;
 }

@@ -109,6 +109,36 @@ calendar:
     scopes:
       - "https://www.googleapis.com/auth/calendar"
 
+# ── Email Access (Task 4) ─────────────────────────────────────────────────────
+# KILL SWITCH: automated_send_enabled is read from this file at execution time,
+# never from LLM context.  Failure to read the file defaults to false (safe).
+#
+# HARD CODE RULE: .com account NEVER auto-sends — this is enforced in
+# tools/email/safety.py regardless of what this config says.
+#
+# Rate limits shown here are documentation only.  Actual floors are hardcoded
+# in safety.py: com=3/day, co=20/day.  Config can only set equal or stricter.
+
+email:
+  automated_send_enabled: false   # THE KILL SWITCH — keep false until Phase E4
+  co_send_enabled: false          # .co-specific sub-switch (future use)
+  daily_limit_com: 3              # Hardcoded floor in safety.py; config ≥ 3
+  daily_limit_co: 20              # Hardcoded floor in safety.py; config ≥ 20
+  zoho:
+    imap_server: "imappro.zoho.com"
+    imap_port: 993
+    # Credentials in .env only — NEVER put passwords here:
+    #   ZOHO_IMAP_HOST     — override imap_server if needed
+    #   ZOHO_IMAP_USER     — e.g. hermann@aitourpilot.com
+    #   ZOHO_IMAP_PASSWORD — App-specific password
+  instantly:
+    webhook_secret: ""            # Set in .env as INSTANTLY_WEBHOOK_SECRET
+  safety:
+    recipient_dedup_days: 7       # Block same recipient within N days
+    content_dedup_days: 30        # Block same content hash within N days
+    require_approval: true        # All emails must be manually approved
+    auto_approve_co: false        # When true, .co emails skip manual approval
+
 deep_research:
   search_provider: tavily   # tavily | serper
   presets:

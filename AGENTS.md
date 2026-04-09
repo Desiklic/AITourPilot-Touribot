@@ -85,29 +85,98 @@ launchctl load   ~/Library/LaunchAgents/com.touribot.dashboard.plist
 | GET | /api/chat/messages | Get messages (supports polling via since_id) |
 | PATCH | /api/chat/sessions | Rename a session |
 | DELETE | /api/chat/sessions/{id} | Delete a session |
+| DELETE | /api/chat/memory/{id} | Delete a memory |
+| PATCH | /api/chat/memory/{id} | Edit a memory (content, type, importance, museum_id) |
 | POST | /api/chat/research | Start deep research (background) |
 | GET | /api/chat/research | List research sessions |
 | GET | /api/chat/research/{id} | Get research status |
 | GET | /api/chat/research/{id}/report | Get research report |
 
-## Memory System Behavior
+## Memory System 2.0
 
-The `[MUSEUM: X]` tags in memory content are **plain text, not structured metadata**. There is no `tags` column in the live `memories` table. The schema is: `id, content, type, importance, created_at, updated_at`.
+### Schema
+The `memories` table has: `id, content, type, importance, museum_id, tags, source, created_at, updated_at`.
 
-Search uses `hybrid_search(query, limit=5)` — 70% vector similarity + 30% FTS5. The `[MUSEUM: X]` text helps ranking but is not a filter. Do not assume tag-based querying exists.
+- **`museum_id`** is a nullable FK to `leads.db.museums.id`. When set, the memory is linked to a specific museum. When NULL, it's a global memory.
+- **`tags`** is a JSON array string for flexible categorization.
+- **`source`** tracks provenance: `extraction` (auto-extracted from chat), `manual`, `research` (from deep research bridge), `cli`.
 
-Memory extraction (Haiku) sometimes saves low-quality entries (meta-commentary, uncertain statements). This is a known limitation — the extraction prompt could be improved but `tools/memory/` is off-limits.
+### Memory Types
+Use domain-specific types, NOT the old generic ones:
+- `contact_intel` — person info (role, preferences, communication style)
+- `museum_intel` — institution facts (visitor numbers, tech stack, budget cycles)
+- `interaction` — dated events (email sent, meeting held, response received)
+- `strategy` — campaign learnings (what angles work, timing insights)
+- `research` — deep research findings (auto-bridged from research engine)
+- `general` — anything else
+
+Legacy types (`fact`, `event`, `insight`, `error`) still exist in some old memories but should NOT be used for new writes.
+
+### Extraction
+Memory extraction uses **Sonnet** (claude-sonnet-4-6) with JSON schema output. The extraction includes:
+1. A `worth_saving: boolean` gate — trivial exchanges produce zero writes
+2. Structured fields: `content`, `type`, `importance`, `museum_name`, `tags`
+3. Museum name resolution: `_resolve_museum_id()` fuzzy-matches against leads.db
+
+### Search (RRF)
+`hybrid_search(query, limit, include_sessions, museum_id)` uses **Reciprocal Rank Fusion**:
+- Runs FTS5 + vector search independently, merges via RRF formula
+- When `museum_id` is provided: museum-filtered results rank higher than global
+- Score range: ~0.001-0.03 (much smaller than the old 0-1 range)
+- Downstream score threshold: 0.005 (not 0.1)
+
+### Tiered Context
+`_assemble_context(user_message)` in session.py loads context progressively:
+- **Tier 1** (always): soul.md + USER.md + pipeline summary + top global memories (~4K tokens)
+- **Tier 2** (museum detected): museum record + contacts + museum memories + interactions (~4K tokens)
+- **Tier 3** (drafting/research): email templates + research doc + full history (~8K tokens)
+
+Museum detection: `_detect_museum(message)` fuzzy-matches against leads.db museum names.
+
+### Research Bridge
+When `tools/research/orchestrator.py` completes a research session, `_bridge_to_memory()` auto-extracts key findings and writes them as `research`-type memories with the museum_id. Max 10 memories per research session.
+
+### Curator
+Runs daily at session start via `_maybe_run_curator()`:
+- Expires low-importance old memories (type interaction/general/event, importance <5, >90 days)
+- Consolidates near-duplicates (cosine >0.85 within same museum_id)
+- Never deletes importance >= 8
+
+### Writing Memories
+```python
+from tools.memory.memory_write import write_memory
+write_memory(
+    content="Lisa Witschnig prefers German-language emails",
+    memory_type="contact_intel",    # use domain types
+    importance=7,
+    museum_id=1,                     # FK to leads.db museums.id
+    source="extraction",             # or "manual", "research", "cli"
+    tags='["language", "preference"]',  # JSON string
+)
+```
+
+### Searching Memories
+```python
+from tools.memory.memory_db import hybrid_search, list_memories
+# Global search
+results = hybrid_search("email strategy", limit=10)
+# Museum-filtered search
+results = hybrid_search("contact", museum_id=1, limit=10)
+# List by type
+results = list_memories(limit=20, memory_type="contact_intel", museum_id=1)
+```
 
 ## Files NOT to Modify
 
-These backend files are stable and must not be changed:
-- `tools/memory/*.py` — Memory system (from HenryBot)
-- `tools/chat/session.py` — Chat session logic
+These backend files are stable and must not be changed without explicit instruction:
 - `tools/leads/lead_db.py` — Lead database CRUD
-- `tools/outreach/*.py` — Email drafting engine
+- `tools/leads/pipeline.py` — Pipeline display
+- `tools/outreach/*.py` — Email drafting engine (except personalizer.py for memory integration)
 - `run.py` — CLI entry point
 - `soul.md` — Touri's identity
 - `memory/USER.md` — Hermann's identity
+
+Memory system files (`tools/memory/`, `tools/chat/session.py`) may be modified for memory improvements — always with a plan in `docs_dev/` and a backup of `data/memory.db`.
 
 New Python code goes in `tools/api/` (FastAPI) or `tools/research/` (deep research).
 Dashboard code goes in `touri-dashboard/`.

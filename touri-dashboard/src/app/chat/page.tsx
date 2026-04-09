@@ -9,8 +9,8 @@ import { useSidebarContent } from '@/components/layout/layout-shell';
 import { streamChat, getSessions, getMessages } from '@/lib/api/chat-api';
 import type { ChatMessage, ChatSession } from '@/lib/api/chat-api';
 
-// Streaming message placeholder ID (negative to avoid collision with DB IDs)
-const STREAMING_MSG_ID = -999;
+// Counter for unique streaming placeholder IDs (negative to avoid collision with DB IDs)
+let streamingIdCounter = -1000;
 
 export default function ChatPage() {
   return (
@@ -160,9 +160,10 @@ function ChatPageInner() {
       };
       setMessages((prev) => [...prev, tempUserMsg]);
 
-      // Add streaming placeholder
+      // Add streaming placeholder with unique ID
+      const thisStreamId = streamingIdCounter--;
       const streamingMsg: ChatMessage = {
-        id: STREAMING_MSG_ID,
+        id: thisStreamId,
         session_id: sessionId || '',
         role: 'assistant',
         content: '',
@@ -202,7 +203,7 @@ function ChatPageInner() {
               accumulatedText += data.text || '';
               setMessages((prev) =>
                 prev.map((m) =>
-                  m.id === STREAMING_MSG_ID ? { ...m, content: accumulatedText } : m,
+                  m.id === thisStreamId ? { ...m, content: accumulatedText } : m,
                 ),
               );
               scrollToBottom('smooth');
@@ -210,7 +211,7 @@ function ChatPageInner() {
               const finalText = data.text || accumulatedText || '';
               setMessages((prev) =>
                 prev.map((m) =>
-                  m.id === STREAMING_MSG_ID
+                  m.id === thisStreamId
                     ? { ...m, content: finalText, streaming: false }
                     : m,
                 ),
@@ -223,7 +224,7 @@ function ChatPageInner() {
             } else if (data.event === 'error') {
               setMessages((prev) =>
                 prev.map((m) =>
-                  m.id === STREAMING_MSG_ID
+                  m.id === thisStreamId
                     ? { ...m, content: `Error: ${data.text || 'Unknown error'}`, streaming: false }
                     : m,
                 ),
@@ -238,7 +239,7 @@ function ChatPageInner() {
         // Stream error — finalize with whatever accumulated
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === STREAMING_MSG_ID
+            m.id === thisStreamId
               ? {
                   ...m,
                   content: accumulatedText || 'Connection error — is the Touri backend running?',

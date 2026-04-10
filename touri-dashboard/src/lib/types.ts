@@ -136,11 +136,35 @@ export interface ContactListItem {
   museum_city: string | null;
   museum_country: string | null;
   museum_website: string | null;
+  museum_tier: number;
+  museum_score: number | null;
   // Derived
   interaction_count: number;
   last_interaction: string | null;
   next_followup: string | null;
   engagement_level: 'none' | 'outreach' | 'responded' | 'active';
+}
+
+// Museum group for the Museums view in Contacts page
+export interface MuseumContactGroup {
+  museum_id: number;
+  museum_name: string;
+  museum_city: string | null;
+  museum_country: string | null;
+  museum_source: string | null;
+  museum_stage: number;
+  museum_tier: number;
+  museum_score: number | null;
+  interaction_count: number;
+  last_interaction: string | null;
+  next_followup: string | null;
+  contacts: Array<{
+    id: number;
+    full_name: string;
+    role: string | null;
+    email: string | null;
+    is_primary: 0 | 1;
+  }>;
 }
 
 // Follow-up task for the task board

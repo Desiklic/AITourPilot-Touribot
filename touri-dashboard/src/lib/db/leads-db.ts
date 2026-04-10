@@ -493,6 +493,8 @@ const CONTACTS_BASE_QUERY = `
     m.city   as museum_city,
     m.country as museum_country,
     m.website as museum_website,
+    m.tier as museum_tier,
+    m.score as museum_score,
     (SELECT COUNT(*)   FROM interactions WHERE museum_id = c.museum_id)                                           as interaction_count,
     (SELECT MAX(created_at)   FROM interactions WHERE museum_id = c.museum_id)                                   as last_interaction,
     (SELECT MAX(follow_up_date) FROM interactions WHERE museum_id = c.museum_id AND follow_up_date IS NOT NULL)  as next_followup,

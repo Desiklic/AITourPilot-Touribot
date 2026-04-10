@@ -29,14 +29,28 @@ function ChatPageInner() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
   const [promptPrefill, setPromptPrefill] = useState<string>('');
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dragCounterRef = useRef(0);
   const chatInputRef = useRef<ChatInputHandle>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const abortRef = useRef<(() => void) | null>(null);
+
+  // ── Multi-session streaming support ──────────────────────────────
+  // Track which session the user is currently VIEWING (may differ from streaming sessions)
+  const activeSessionRef = useRef<string | null>(null);
+  // Track all in-flight streams: sessionId → { abort, streamId }
+  const activeStreamsRef = useRef<Map<string, { abort: () => void; streamId: number }>>(new Map());
+  // Set of sessions with running streams (for UI indicators)
+  const [streamingSessions, setStreamingSessions] = useState<Set<string>>(new Set());
+
+  // Keep the ref in sync with state
+  useEffect(() => {
+    activeSessionRef.current = sessionId;
+  }, [sessionId]);
+
+  // Derived: is the CURRENT session streaming?
+  const sending = sessionId ? streamingSessions.has(sessionId) : false;
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     const el = scrollRef.current;
@@ -76,11 +90,9 @@ function ChatPageInner() {
     const prompt = searchParams.get('prompt');
     if (prompt) {
       setPromptPrefill(decodeURIComponent(prompt));
-      // Start a new chat session so the prefilled prompt goes into a fresh context
       setMessages([]);
       setSessionId(null);
     }
-    // Only run on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -92,9 +104,8 @@ function ChatPageInner() {
       try {
         const data = await getSessions();
         setSessions(data || []);
-        // If a prompt param was given, don't load the last session — start fresh
         if (!promptParam && data && data.length > 0) {
-          const latest = data[0]; // sessions are ordered by last_message_at DESC
+          const latest = data[0];
           setSessionId(latest.session_id);
           const msgs = await getMessages(latest.session_id);
           setMessages(msgs || []);
@@ -193,26 +204,29 @@ function ChatPageInner() {
 
   const handleSend = useCallback(
     async (message: string, files: File[]) => {
-      if (sending) return;
-      setSending(true);
+      // Allow sending even if OTHER sessions are streaming — only block THIS session
+      if (sessionId && streamingSessions.has(sessionId)) return;
 
-      // Optimistic user message — include attachment names so user sees what was sent
+      // Capture the session at send time — this is the session this stream belongs to
+      const sendSessionId = sessionId;
+
+      // Optimistic user message
       const attachmentSuffix =
         files.length > 0 ? '\n\n📎 ' + files.map((f) => f.name).join(', ') : '';
       const tempUserMsg: ChatMessage = {
         id: Date.now(),
-        session_id: sessionId || '',
+        session_id: sendSessionId || '',
         role: 'user',
         content: message + attachmentSuffix,
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, tempUserMsg]);
 
-      // Add streaming placeholder with unique ID
+      // Streaming placeholder
       const thisStreamId = streamingIdCounter--;
       const streamingMsg: ChatMessage = {
         id: thisStreamId,
-        session_id: sessionId || '',
+        session_id: sendSessionId || '',
         role: 'assistant',
         content: '',
         created_at: new Date().toISOString(),
@@ -222,11 +236,15 @@ function ChatPageInner() {
       setTimeout(() => scrollToBottom('smooth'), 50);
 
       let accumulatedText = '';
-      let streamSessionId = sessionId;
+      let streamSessionId = sendSessionId;
+
+      // Mark this session as streaming
+      const tempStreamKey = sendSessionId || `new-${Date.now()}`;
+      setStreamingSessions((prev) => new Set(prev).add(tempStreamKey));
 
       try {
-        const { stream, abort } = streamChat(message, sessionId, files);
-        abortRef.current = abort;
+        const { stream, abort } = streamChat(message, sendSessionId, files);
+        activeStreamsRef.current.set(tempStreamKey, { abort, streamId: thisStreamId });
 
         const reader = stream.getReader();
         while (true) {
@@ -241,68 +259,110 @@ function ChatPageInner() {
 
             if (data.event === 'meta') {
               streamSessionId = data.session_id;
-              if (data.session_id && data.session_id !== sessionId) {
-                setSessionId(data.session_id);
+              // Update the stream key if we got a real session ID from the server
+              if (data.session_id && data.session_id !== sendSessionId) {
+                // Move stream tracking to the real session ID
+                const streamInfo = activeStreamsRef.current.get(tempStreamKey);
+                if (streamInfo) {
+                  activeStreamsRef.current.delete(tempStreamKey);
+                  activeStreamsRef.current.set(data.session_id, streamInfo);
+                }
+                setStreamingSessions((prev) => {
+                  const next = new Set(prev);
+                  next.delete(tempStreamKey);
+                  next.add(data.session_id);
+                  return next;
+                });
+
+                // Only update visible sessionId if user is still on this session
+                if (activeSessionRef.current === sendSessionId || activeSessionRef.current === null) {
+                  setSessionId(data.session_id);
+                }
               }
               continue;
             }
 
+            // Only update visible messages if user is still viewing THIS session
+            const isViewingThisSession =
+              activeSessionRef.current === streamSessionId ||
+              activeSessionRef.current === sendSessionId ||
+              activeSessionRef.current === null;
+
             if (data.event === 'text_delta') {
               accumulatedText += data.text || '';
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === thisStreamId ? { ...m, content: accumulatedText } : m,
-                ),
-              );
-              scrollToBottom('smooth');
+              if (isViewingThisSession) {
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === thisStreamId ? { ...m, content: accumulatedText } : m,
+                  ),
+                );
+                scrollToBottom('smooth');
+              }
             } else if (data.event === 'done') {
               const finalText = data.text || accumulatedText || '';
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === thisStreamId
-                    ? { ...m, content: finalText, streaming: false }
-                    : m,
-                ),
-              );
-              setSending(false);
-              // Refresh session list to pick up the new/updated session
-              if (streamSessionId) {
-                await fetchSessions();
+              if (isViewingThisSession) {
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === thisStreamId
+                      ? { ...m, content: finalText, streaming: false }
+                      : m,
+                  ),
+                );
               }
+              await fetchSessions();
             } else if (data.event === 'error') {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === thisStreamId
-                    ? { ...m, content: `Error: ${data.text || 'Unknown error'}`, streaming: false }
-                    : m,
-                ),
-              );
-              setSending(false);
+              if (isViewingThisSession) {
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === thisStreamId
+                      ? { ...m, content: `Error: ${data.text || 'Unknown error'}`, streaming: false }
+                      : m,
+                  ),
+                );
+              }
             }
           } catch {
             // Skip malformed JSON lines
           }
         }
       } catch {
-        // Stream error — finalize with whatever accumulated
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === thisStreamId
-              ? {
-                  ...m,
-                  content: accumulatedText || 'Connection error — is the Touri backend running?',
-                  streaming: false,
-                }
-              : m,
-          ),
-        );
+        // Stream error
+        const isViewing =
+          activeSessionRef.current === streamSessionId ||
+          activeSessionRef.current === sendSessionId;
+        if (isViewing) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === thisStreamId
+                ? {
+                    ...m,
+                    content: accumulatedText || 'Connection error — is the Touri backend running?',
+                    streaming: false,
+                  }
+                : m,
+            ),
+          );
+        }
       } finally {
-        setSending(false);
-        abortRef.current = null;
-        setTimeout(() => scrollToBottom('smooth'), 100);
+        // Clean up stream tracking
+        const finalKey = streamSessionId || tempStreamKey;
+        activeStreamsRef.current.delete(finalKey);
+        activeStreamsRef.current.delete(tempStreamKey);
+        setStreamingSessions((prev) => {
+          const next = new Set(prev);
+          next.delete(finalKey);
+          next.delete(tempStreamKey);
+          return next;
+        });
+        if (
+          activeSessionRef.current === streamSessionId ||
+          activeSessionRef.current === sendSessionId
+        ) {
+          setTimeout(() => scrollToBottom('smooth'), 100);
+        }
       }
     },
-    [sending, sessionId, scrollToBottom, fetchSessions],
+    [sessionId, streamingSessions, scrollToBottom, fetchSessions],
   );
 
   return (
@@ -329,7 +389,7 @@ function ChatPageInner() {
           <ChatThread messages={messages} loading={loading} />
         </div>
 
-        {/* Typing indicator — only when waiting for first token */}
+        {/* Typing indicator — only when waiting for first token on CURRENT session */}
         {sending && messages[messages.length - 1]?.content === '' && (
           <div className="px-6 py-2 flex items-center gap-2 shrink-0">
             <div className="flex gap-1">
@@ -341,7 +401,7 @@ function ChatPageInner() {
           </div>
         )}
 
-        {/* Input */}
+        {/* Input — disabled only when THIS session is streaming */}
         <div className="shrink-0">
           <ChatInput
             ref={chatInputRef}

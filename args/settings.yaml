@@ -139,6 +139,9 @@ email:
     require_approval: true        # All emails must be manually approved
     auto_approve_co: false        # When true, .co emails skip manual approval
 
+voice:
+  stt_model: gpt-4o-mini-transcribe
+
 deep_research:
   search_provider: tavily   # tavily | serper
   presets:

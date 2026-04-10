@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useCallback, useImperativeHandle, forwardRef, useEffect } from 'react';
-import { Send, Loader2, Plus, X, FileText } from 'lucide-react';
+import { Send, Loader2, Plus, X, FileText, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface AttachmentPreview {
@@ -25,6 +25,11 @@ export interface ChatInputHandle {
 const MAX_FILES = 5;
 const MAX_FILE_SIZE_MB = 10;
 const ACCEPTED_TYPES = 'image/*,.md,.txt,.pdf,.docx,.doc,.csv,.json,.html,.log,.py,.ts,.tsx,.js,.jsx';
+
+const LONG_PRESS_MS = 300;
+const MIN_DURATION_MS = 300;
+const MIN_SIZE_BYTES = 1000;
+const CHAT_API = process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:8766';
 
 export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function ChatInput(
   { onSend, disabled, sending, initialValue, onInitialValueConsumed },
@@ -79,6 +84,154 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
   }, []);
 
   useImperativeHandle(ref, () => ({ addFiles }), [addFiles]);
+
+  // ── Voice recording ──────────────────────────────────────────────
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const recordStartRef = useRef(0);
+  const recordMimeRef = useRef('');
+  const longPressRef = useRef(false);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup stream on unmount
+  useEffect(() => {
+    return () => {
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    };
+  }, []);
+
+  function pickMimeType(): string {
+    const types = [
+      'audio/webm;codecs=opus', 'audio/webm', 'audio/mp4',
+      'audio/ogg;codecs=opus', 'audio/ogg',
+    ];
+    for (const t of types) {
+      if (MediaRecorder.isTypeSupported(t)) return t;
+    }
+    return '';
+  }
+
+  function guessExt(mime: string): string {
+    if (mime.includes('ogg')) return 'ogg';
+    if (mime.includes('mp4')) return 'mp4';
+    if (mime.includes('wav')) return 'wav';
+    return 'webm';
+  }
+
+  async function ensureStream(): Promise<boolean> {
+    if (streamRef.current) {
+      const tracks = streamRef.current.getAudioTracks();
+      if (tracks.length > 0 && tracks[0].readyState === 'live') return true;
+    }
+    try {
+      streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function startRecording() {
+    if (isRecording || isTranscribing) return;
+    const ok = await ensureStream();
+    if (!ok || !streamRef.current) return;
+
+    chunksRef.current = [];
+    const mime = pickMimeType();
+    recordMimeRef.current = mime;
+
+    const recorder = new MediaRecorder(streamRef.current, mime ? { mimeType: mime } : undefined);
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunksRef.current.push(e.data);
+    };
+    recorder.onstop = () => transcribeAudio();
+    mediaRecorderRef.current = recorder;
+    recordStartRef.current = Date.now();
+    recorder.start();
+    setIsRecording(true);
+  }
+
+  function stopRecording() {
+    if (mediaRecorderRef.current?.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+  }
+
+  async function transcribeAudio() {
+    const duration = Date.now() - recordStartRef.current;
+    const blob = new Blob(chunksRef.current, { type: recordMimeRef.current });
+
+    if (duration < MIN_DURATION_MS || blob.size < MIN_SIZE_BYTES) return;
+
+    setIsTranscribing(true);
+    try {
+      const fd = new FormData();
+      fd.append('audio', blob, `recording.${guessExt(recordMimeRef.current)}`);
+      const res = await fetch(`${CHAT_API}/api/chat/transcribe`, { method: 'POST', body: fd });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        console.warn('Transcription error:', err);
+        return;
+      }
+      const data = await res.json();
+      if (data.text) {
+        setValue((prev) => (prev ? `${prev} ${data.text}` : data.text));
+        // Focus and resize textarea
+        setTimeout(() => {
+          textareaRef.current?.focus();
+          adjustHeight();
+        }, 0);
+      }
+    } catch (err) {
+      console.warn('Transcription failed:', err);
+    } finally {
+      setIsTranscribing(false);
+    }
+  }
+
+  // Dual mode: short click toggles, long press holds
+  function handleMicDown() {
+    if (isTranscribing) return;
+    longPressRef.current = false;
+    if (isRecording) {
+      // Already recording from a previous short click — stop it
+      stopRecording();
+      return;
+    }
+    longPressTimerRef.current = setTimeout(() => {
+      longPressRef.current = true;
+      startRecording();
+    }, LONG_PRESS_MS);
+  }
+
+  function handleMicUp() {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    if (longPressRef.current && isRecording) {
+      // Long press release — stop recording
+      stopRecording();
+      longPressRef.current = false;
+    } else if (!longPressRef.current && !isRecording) {
+      // Short click — toggle on
+      startRecording();
+    }
+  }
+
+  function clearLongPressTimer() {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────
 
   const removeAttachment = useCallback((id: string) => {
     setAttachments((prev) => {
@@ -224,6 +377,43 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
           className="flex-1 resize-none bg-muted rounded-xl px-4 py-3 text-[15px] placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] min-h-[72px] max-h-[340px] transition-all"
           rows={3}
         />
+
+        {/* Microphone button */}
+        <button
+          type="button"
+          disabled={isDisabled || isTranscribing}
+          onPointerDown={handleMicDown}
+          onPointerUp={handleMicUp}
+          onPointerLeave={() => {
+            if (longPressRef.current && isRecording) {
+              stopRecording();
+              longPressRef.current = false;
+            }
+            clearLongPressTimer();
+          }}
+          onPointerCancel={() => {
+            if (longPressRef.current && isRecording) {
+              stopRecording();
+              longPressRef.current = false;
+            }
+            clearLongPressTimer();
+          }}
+          aria-label={isRecording ? 'Recording — click to stop' : isTranscribing ? 'Transcribing...' : 'Hold to record, click to toggle'}
+          title={isRecording ? 'Recording — click to stop' : isTranscribing ? 'Transcribing...' : 'Hold to record, click to toggle'}
+          className={`shrink-0 rounded-xl h-[44px] w-[44px] flex items-center justify-center transition-all select-none touch-none ${
+            isRecording
+              ? 'bg-red-500 text-white animate-pulse'
+              : isTranscribing
+                ? 'bg-muted text-muted-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+          }`}
+        >
+          {isTranscribing ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Mic className="w-5 h-5" />
+          )}
+        </button>
 
         {/* Send button */}
         <Button

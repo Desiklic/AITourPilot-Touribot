@@ -640,6 +640,76 @@ def delete_session(session_id: str):
 
 
 # ---------------------------------------------------------------------------
+# Transcription endpoint
+# ---------------------------------------------------------------------------
+
+
+@router.post("/transcribe")
+async def transcribe_audio(request: Request):
+    """Transcribe audio via OpenAI STT API."""
+    from fastapi.responses import JSONResponse
+
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        # Try loading from .env in case the server started without it
+        try:
+            from dotenv import load_dotenv
+            load_dotenv(PROJECT_ROOT / ".env")
+            api_key = os.environ.get("OPENAI_API_KEY")
+        except ImportError:
+            pass
+    if not api_key:
+        return JSONResponse({"error": "OPENAI_API_KEY not configured"}, status_code=503)
+
+    form = await request.form()
+    audio_file = form.get("audio")
+    if not audio_file:
+        return JSONResponse({"error": "No audio file provided"}, status_code=400)
+
+    # Read stt_model from settings
+    model = "gpt-4o-mini-transcribe"
+    try:
+        settings = _get_settings()
+        model = settings.get("voice", {}).get("stt_model", model)
+    except Exception:
+        pass
+
+    audio_bytes = await audio_file.read()
+    filename = getattr(audio_file, "filename", None) or "recording.webm"
+    content_type = getattr(audio_file, "content_type", None) or "audio/webm"
+
+    # Build multipart form data for OpenAI
+    import urllib.request as _urllib_request
+    import json as _json
+
+    boundary = "----TouriBotAudioBoundary"
+    body = b""
+    body += f"--{boundary}\r\n".encode()
+    body += f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'.encode()
+    body += f"Content-Type: {content_type}\r\n\r\n".encode()
+    body += audio_bytes
+    body += f"\r\n--{boundary}\r\n".encode()
+    body += f'Content-Disposition: form-data; name="model"\r\n\r\n{model}'.encode()
+    body += f"\r\n--{boundary}--\r\n".encode()
+
+    req = _urllib_request.Request(
+        "https://api.openai.com/v1/audio/transcriptions",
+        data=body,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": f"multipart/form-data; boundary={boundary}",
+        },
+    )
+
+    try:
+        with _urllib_request.urlopen(req, timeout=30) as resp:
+            result = _json.loads(resp.read())
+        return JSONResponse({"text": result.get("text", ""), "model": model})
+    except Exception as exc:
+        return JSONResponse({"error": f"Transcription failed: {str(exc)}"}, status_code=500)
+
+
+# ---------------------------------------------------------------------------
 # Research endpoints
 # ---------------------------------------------------------------------------
 

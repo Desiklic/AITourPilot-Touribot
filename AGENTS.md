@@ -14,8 +14,8 @@ TouriBot runs two persistent servers via macOS LaunchAgents. They auto-start on 
 **API docs:** http://localhost:8766/docs
 
 ### How they relate
-- The **Dashboard** (Next.js) serves the web UI and reads databases directly via better-sqlite3 for pipeline, stats, calendar, memory, and settings pages.
-- The **FastAPI** (Python) handles chat streaming, conversation persistence, and deep research. The dashboard calls it at `http://localhost:8766` for anything that needs the Anthropic API or Python backend logic.
+- The **Dashboard** (Next.js) serves the web UI and reads databases directly via better-sqlite3 for pipeline, stats, calendar, contacts, memory, and settings pages.
+- The **FastAPI** (Python) handles chat streaming, conversation persistence, tool execution, and deep research. The dashboard calls it at `http://localhost:8766` for anything that needs the Anthropic API or Python backend logic.
 - Both access `data/leads.db` and `data/memory.db` concurrently — WAL mode is enabled on all connections.
 
 ### Port map (all bots on this machine)
@@ -71,6 +71,7 @@ launchctl load   ~/Library/LaunchAgents/com.touribot.dashboard.plist
 | Chat | /chat | FastAPI :8766 via SSE |
 | Stats | /stats | `data/leads.db` via better-sqlite3 |
 | Calendar | /calendar | `data/leads.db` via better-sqlite3 |
+| Contacts | /contacts | `data/leads.db` via better-sqlite3 |
 | Tasks | /tasks | `data/leads.db` via better-sqlite3 |
 | Memory | /memory | `data/memory.db` via better-sqlite3 |
 | Models | /models | Hardcoded config (read-only) |
@@ -78,9 +79,10 @@ launchctl load   ~/Library/LaunchAgents/com.touribot.dashboard.plist
 
 ## FastAPI Endpoints
 
+### Chat
 | Method | Path | Purpose |
 |--------|------|---------|
-| POST | /api/chat/stream | SSE streaming chat with Touri |
+| POST | /api/chat/stream | SSE streaming chat with Touri (with agentic tool-use loop) |
 | GET | /api/chat/sessions | List chat sessions |
 | GET | /api/chat/messages | Get messages (supports polling via since_id) |
 | PATCH | /api/chat/sessions | Rename a session |
@@ -91,6 +93,221 @@ launchctl load   ~/Library/LaunchAgents/com.touribot.dashboard.plist
 | GET | /api/chat/research | List research sessions |
 | GET | /api/chat/research/{id} | Get research status |
 | GET | /api/chat/research/{id}/report | Get research report |
+
+### Files
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | /api/files/list | List files in a configured knowledge source (`?source_label=Business+Wiki`) |
+| GET | /api/files/read | Read a single file (`?source_label=...&path=relative/path.html`) |
+
+### Calendar
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | /api/calendar/events | Upcoming events (`?days=14`). Returns 503 if OAuth not configured |
+| GET | /api/calendar/availability | Free/busy slots (`?start=...&end=...` ISO 8601). Returns 503 if not configured |
+| POST | /api/calendar/events | Create event or reminder (body: `title`, `start`, `end`, `type`, `description`, `attendee_email`) |
+
+### Email
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | /api/email/inbox | Check Zoho inbox (`?days=7&contacts_only=true`). Returns 503 if not configured |
+| GET | /api/email/queue | List email approval queue (`?status=PENDING_APPROVAL&limit=50`) |
+| POST | /api/email/queue/{id}/approve | Approve a queued email (moves to APPROVED; does not send) |
+| POST | /api/email/queue/{id}/cancel | Cancel a queued email (moves to CANCELLED) |
+| GET | /api/email/audit | View audit log (`?queue_id=...&limit=100`) |
+| GET | /api/email/status | Kill switch state and rate limit counters (no credentials needed) |
+
+## Chat Tool Registry (7 tools)
+
+Tools are registered in `tools/api/tool_registry.py` and dispatched from `tools/api/chat_handler.py`. The agentic loop runs up to **5 rounds** of tool calls per user message.
+
+| Tool name | Module | What it does | Credential needed |
+|-----------|--------|-------------|------------------|
+| `browse_url` | `browse_tools.py` | Fetches a URL via Jina Reader and returns rendered text | None |
+| `web_search` | `browse_tools.py` | Searches the web via Tavily; returns top results with snippets | `TAVILY_API_KEY` |
+| `check_calendar` | `calendar_tools.py` | Returns upcoming Google Calendar events and free/busy slots | Google OAuth |
+| `schedule_event` | `calendar_tools.py` | Creates a demo event or all-day reminder on Google Calendar | Google OAuth |
+| `check_email` | `email_tools.py` | Reads recent Zoho inbox messages from known CRM contacts (read-only) | `ZOHO_IMAP_USER`, `ZOHO_IMAP_PASSWORD` |
+| `list_files` | `file_tools.py` | Lists files in a configured knowledge source folder | None |
+| `read_file` | `file_tools.py` | Reads a file (txt, md, html, csv, xlsx, pdf, docx) | None |
+
+Tools that require unconfigured credentials return a plain-text error string — they never crash the chat loop.
+
+SSE events emitted during tool execution:
+- `status` — what tool is running (`"Searching the web..."`, `"Reading file..."`)
+- `tool_result` — summary of what was found
+
+To add a new tool: implement it in `tools/api/`, add its spec to the `*_TOOLS` list, add its name to the name set and dispatch in `tool_registry.py`.
+
+## File System Access (T1)
+
+### Configuration
+Sources are defined in `args/settings.yaml` → `knowledge.sources`:
+
+```yaml
+knowledge:
+  sources:
+    - path: ~/Desktop/AITourPilot Project/BUSINESS_CONTENT/wiki
+      glob: "**/*.html"
+      extractor: html_wiki
+      access: read
+      label: "Business Wiki"
+    - path: ~/Desktop/AITourPilot Project/Marketing Automation
+      glob: "**/*.{txt,md,pdf,docx}"
+      extractor: auto
+      access: read
+      label: "Marketing Materials"
+      exclude_patterns: ["*.png", "*.jpg", "*.gif", "*.svg", ".git/**", "*.csv", "*.xlsx"]
+    - path: ./docs_dev
+      glob: "**/*.md"
+      extractor: md
+      access: readwrite
+      label: "Development Docs"
+  output_dir: knowledge/processed
+  max_file_size_mb: 10
+```
+
+### Security
+- Path traversal protection: all resolved paths verified to sit within the configured source root before opening
+- Absolute paths (e.g. `/etc/passwd`) rejected with 403
+- Files exceeding `max_file_size_mb` return 413
+- API bound to `127.0.0.1` only — not exposed to the internet
+- `access: read` sources are read-only; `readwrite` sources allow future write endpoints
+
+### Knowledge ingest
+134 files processed to `knowledge/processed/`. Extractors handle html (BeautifulSoup), md (plain read), auto (pdf via pdfminer, docx via python-docx). Re-run ingest after adding new sources.
+
+## Browser Access (T2)
+
+- `browse_url` — Jina Reader (`r.jina.ai/<url>`). Returns rendered text. Free, no key.
+- `web_search` — Tavily API. Returns top N results with title, URL, snippet. Needs `TAVILY_API_KEY`.
+- Both are implemented in `tools/api/browse_tools.py`.
+- Errors (network failure, Tavily not configured) return a plain-text error string — the loop continues.
+
+## Calendar Access (T3)
+
+### Setup (one-time OAuth)
+1. Create a Google Cloud project, enable Google Calendar API, create OAuth 2.0 credentials (Desktop app type).
+2. Add to `.env`:
+   ```
+   GOOGLE_CALENDAR_CLIENT_ID=...
+   GOOGLE_CALENDAR_CLIENT_SECRET=...
+   ```
+3. Run the OAuth flow:
+   ```bash
+   python -c "from tools.calendar.google_calendar import authenticate; authenticate()"
+   ```
+4. Token stored at `~/.touribot/google_token.json`. Refreshed automatically.
+
+### Behavior when not configured
+All calendar endpoints return HTTP 503 with a human-readable message. The `check_calendar` and `schedule_event` chat tools return a plain-text error — Touri will tell the user to set up OAuth.
+
+### Calendar config in settings.yaml
+```yaml
+calendar:
+  enabled: true
+  google:
+    token_file: "~/.touribot/google_token.json"
+    scopes:
+      - "https://www.googleapis.com/auth/calendar"
+```
+
+## Email Access (T4)
+
+### Components
+- `tools/email/zoho_reader.py` — IMAP reader (read-only access to Zoho inbox)
+- `tools/email/safety.py` — kill switch, rate limits, duplicate detection, queue, audit log
+
+### Setup
+Add to `.env`:
+```
+ZOHO_IMAP_USER=hermann@aitourpilot.com
+ZOHO_IMAP_PASSWORD=<app-specific-password>
+```
+Generate an app-specific password in Zoho Mail → Security → App Passwords.
+
+### Safety guardrails
+| Guardrail | Details |
+|-----------|---------|
+| Kill switch | `settings.yaml → email.automated_send_enabled`. Read at send time, never cached. Defaults to `false` |
+| .com hard rule | `hermann@aitourpilot.com` never auto-sends — hardcoded in `safety.py`, not overridable by config |
+| Rate limits | 3/day .com (hardcoded floor); 20/day .co (configurable, floor hardcoded) |
+| Recipient dedup | Block same recipient within 7 days |
+| Content dedup | Block same content hash within 30 days |
+| Approval queue | All sends must go through `email_queue` → PENDING_APPROVAL → APPROVED before sending |
+| Audit log | Every status change logged to `email_audit_log` table in `leads.db` |
+
+### Queue status flow
+```
+PENDING_APPROVAL → APPROVED → SENDING → SENT
+                → CANCELLED (any pre-SENT state)
+                → FAILED
+```
+
+### Email config in settings.yaml
+```yaml
+email:
+  automated_send_enabled: false   # THE KILL SWITCH — keep false until Phase E4
+  daily_limit_com: 3
+  daily_limit_co: 20
+  safety:
+    recipient_dedup_days: 7
+    content_dedup_days: 30
+    require_approval: true
+```
+
+## Contacts Page (/contacts)
+
+### Views
+- **People view**: lists individual contacts. Card layout (default) or table layout. Each card shows name, role, museum, email, last interaction date, source badge.
+- **Museums view**: lists museums. Museum cards show museum name, location, stage, contact list.
+
+### Filters and search
+- Full-text search across name, role, museum
+- Source filter (CRM contacts, imported, etc.)
+- Engagement filter (active, inactive, etc.)
+
+### Contact detail sheet
+Slide-in sheet on card/row click shows:
+- Contact metadata (name, role, email, phone, LinkedIn)
+- Interaction history
+- Linked memories
+- Follow-up tasks
+- Cross-links to Pipeline, Chat, Calendar, Memory pages
+
+### Data model
+Data is read from `data/leads.db` via better-sqlite3 at request time (no FastAPI involvement). Tables: `museums`, `contacts`, `interactions`.
+
+## Calendar Page (/calendar)
+
+### Views
+| View | File | Description |
+|------|------|-------------|
+| Week | `week-view.tsx` | 7-day columns, hour-based event placement |
+| Month | `month-view.tsx` | Traditional month grid with event chips |
+| Year | `year-view.tsx` | 12-month overview; click day to jump to week view |
+
+Cross-view navigation: click a day in Year → opens Week view at that week. Click a day in Month → opens Week view at that week.
+
+Controls: tab switcher (Week/Month/Year), back/forward arrows, Today button, refresh.
+
+Color coding: amber = follow-up, cyan = demo, red = overdue.
+
+## Chat: Concurrent Sessions
+
+- Each session tracks its own streaming state via `streamingSessions: Set<string>` in React state.
+- Users can switch between sessions while one is streaming — the background stream completes silently.
+- On switching back to a completed session, messages are reloaded automatically.
+- The `sending` prop passed to `ChatInput` is `streamingSessions.has(sessionId)` — per-session, not global.
+
+## Chat: File Drag/Drop
+
+- `ChatInput` is a `forwardRef` component exposing an `addFiles(files)` imperative handle.
+- A global drag overlay (frosted glass UX) captures drag events on the chat page and calls `addFiles`.
+- File handling:
+  - Images → converted to base64, sent as Anthropic vision blocks (`image_url` content)
+  - Documents (pdf, docx, txt, csv, xlsx) → text extracted client-side, sent as text blocks
+- Limits: 10 MB per file, 5 files max per message.
 
 ## Memory System 2.0
 
@@ -185,4 +402,8 @@ Dashboard code goes in `touri-dashboard/`.
 
 - **Python**: 3.12 via Miniforge comfyenv (`/Users/hermannkudlich/Documents/Miniforge3/envs/comfyenv/bin/python`)
 - **Node.js**: v20.19.2 via nvm (`/Users/hermannkudlich/.nvm/versions/node/v20.19.2/bin/node`)
-- **API keys**: In `.env` (ANTHROPIC_API_KEY, optionally TAVILY_API_KEY for deep research)
+- **Required .env keys**:
+  - `ANTHROPIC_API_KEY` — always required
+  - `TAVILY_API_KEY` — for web_search tool and deep research
+  - `GOOGLE_CALENDAR_CLIENT_ID` + `GOOGLE_CALENDAR_CLIENT_SECRET` — for calendar tools (OAuth flow needed after setting)
+  - `ZOHO_IMAP_USER` + `ZOHO_IMAP_PASSWORD` — for check_email tool (app-specific password from Zoho)

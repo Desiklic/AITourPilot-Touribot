@@ -10,7 +10,7 @@ TouriBot is an AI-powered museum outreach assistant for AITourPilot. It helps He
 - `memory/USER.md` — Hermann's identity (NEVER auto-edit)
 - `memory/MEMORY.md` — Working memory (auto-promoted facts)
 - `ARCHITECTURE.md` — Full component design and data model
-- `args/settings.yaml` — All configuration
+- `args/settings.yaml` — All configuration (memory, models, knowledge sources, email safety)
 
 ## Running
 
@@ -54,21 +54,67 @@ tail -f logs/api.log
 - **Leads**: `tools/leads/` — Museum pipeline database (55 museums, 76 contacts)
 - **Outreach**: `tools/outreach/` — Email drafting engine
 - **Research**: `tools/research/` — Deep research engine (Tavily web search + Jina reader + Anthropic synthesis)
-- **API**: `tools/api/` — FastAPI server wrapping session.py for dashboard streaming
+- **API**: `tools/api/` — FastAPI server with chat, file, calendar, and email routes
+- **Calendar**: `tools/calendar/google_calendar.py` — Google Calendar provider
+- **Email**: `tools/email/zoho_reader.py` + `tools/email/safety.py` — IMAP read + safety infrastructure
 
 ### Dashboard (`touri-dashboard/`)
 - **Stack**: Next.js 16, React 19, shadcn/ui, Tailwind v4, Recharts, @hello-pangea/dnd
-- **Pages**: Pipeline (kanban CRM), Chat, Stats, Calendar, Tasks, Memory, Models, Settings
+- **Pages**: Pipeline (kanban CRM), Chat, Stats, Calendar, Contacts, Tasks, Memory, Models, Settings
 - **DB access**: better-sqlite3 reads `data/leads.db` and `data/memory.db` (WAL mode for concurrent access with Python)
-- **Chat**: Connects to FastAPI at :8766 for SSE streaming
+- **Chat**: Connects to FastAPI at :8766 for SSE streaming; supports concurrent sessions and file drag/drop
 
 ### Databases
 | DB | Location | Used by |
 |----|----------|---------|
-| `data/leads.db` | Museums, contacts, interactions, research | CLI + Dashboard |
+| `data/leads.db` | Museums, contacts, interactions, research, email queue, audit log | CLI + Dashboard |
 | `data/memory.db` | Memories, embeddings, session chunks | CLI + Dashboard |
 | `data/conversations.db` | Dashboard chat sessions | FastAPI only |
 | `data/research.db` | Deep research state checkpoints | FastAPI only |
+
+## Dashboard Pages
+
+| Page | Route | What it does |
+|------|-------|-------------|
+| Pipeline CRM | /pipeline | Kanban board — museums tracked from identification to close |
+| Chat | /chat | Multi-session streaming chat with Touri + file drag/drop |
+| Stats | /stats | Funnel metrics, email stats, activity timeline |
+| Calendar | /calendar | Week/Month/Year views with follow-up and demo events |
+| Contacts | /contacts | People/Museums toggle — card and table layouts with search/filter/detail sheet |
+| Tasks | /tasks | Follow-up task board |
+| Memory | /memory | Browse and edit the memory database |
+| Models | /models | Model config (read-only) |
+| Settings | /settings | App configuration |
+
+## Chat Tools (7 total)
+
+Touri has access to 7 tools via an agentic tool-use loop (max 5 rounds):
+
+| Tool | Capability | Activation |
+|------|-----------|-----------|
+| `browse_url` | Fetch any web page via Jina Reader | Always available (no key needed) |
+| `web_search` | Search the web via Tavily | Needs `TAVILY_API_KEY` in .env |
+| `check_calendar` | Read upcoming events and availability | Needs Google OAuth setup (see below) |
+| `schedule_event` | Create demo events / follow-up reminders | Needs Google OAuth setup |
+| `check_email` | Read Zoho inbox for museum replies (read-only) | Needs `ZOHO_IMAP_USER` + `ZOHO_IMAP_PASSWORD` |
+| `list_files` | List files in configured knowledge source folders | Always available |
+| `read_file` | Read file content (xlsx, csv, pdf, docx, txt, md, html) | Always available |
+
+Tool calls emit SSE status events so the dashboard shows live progress.
+
+## Knowledge Ingest Pipeline
+
+Config-driven ingest at `args/settings.yaml` → `knowledge.sources`. Three configured sources:
+
+| Label | Path | Glob | Access |
+|-------|------|------|--------|
+| Business Wiki | `~/Desktop/AITourPilot Project/BUSINESS_CONTENT/wiki` | `**/*.html` | read |
+| Marketing Materials | `~/Desktop/AITourPilot Project/Marketing Automation` | `**/*.{txt,md,pdf,docx}` | read |
+| Development Docs | `./docs_dev` | `**/*.md` | readwrite |
+
+134 files processed to `knowledge/processed/`. Extractors: html_wiki, md, auto (pdf/docx). Max file size: 10 MB. Path traversal protection on all file endpoints.
+
+To add a new source, append to `knowledge.sources` in `args/settings.yaml` and re-run ingest.
 
 ## Memory System 2.0
 
@@ -131,6 +177,28 @@ Runs automatically once per day at session start:
 - **Expire**: deletes low-importance (<5) old (>90 days) memories of type interaction/general/event
 - **Consolidate**: merges near-duplicate memories (cosine >0.85) within the same museum
 - Never deletes memories with importance >= 8
+
+## Credentials & Activation
+
+| Capability | Required .env vars | Notes |
+|------------|-------------------|-------|
+| Core chat | `ANTHROPIC_API_KEY` | Always required |
+| Web search | `TAVILY_API_KEY` | Without this, `web_search` tool returns error |
+| Browser fetch | _(none)_ | Jina Reader is free, no key needed |
+| Google Calendar | `GOOGLE_CALENDAR_CLIENT_ID`, `GOOGLE_CALENDAR_CLIENT_SECRET` | After setting vars, run OAuth flow: `python -c "from tools.calendar.google_calendar import authenticate; authenticate()"`. Token stored at `~/.touribot/google_token.json` |
+| Zoho Email | `ZOHO_IMAP_USER`, `ZOHO_IMAP_PASSWORD` | App-specific password from Zoho. Inbox read-only. Auto-send kill switch defaults to false |
+| Deep research | `TAVILY_API_KEY` | Same key as web search |
+
+## Email Safety
+
+The email system has layered safety controls:
+
+- **Kill switch** (`settings.yaml → email.automated_send_enabled`): read at execution time, never cached. Defaults to `false`
+- **.com account hard rule**: `hermann@aitourpilot.com` **never auto-sends** — code-level constraint in `tools/email/safety.py` regardless of kill switch
+- **Rate limits**: 3/day .com (hardcoded floor), 20/day .co (configurable)
+- **Duplicate detection**: 7-day recipient block + 30-day content hash block
+- **Approval queue**: all emails must be manually approved via `/api/email/queue/{id}/approve`
+- **Audit log**: every approve/cancel action logged to `email_audit_log` table in `leads.db`
 
 ## Constraints
 

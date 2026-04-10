@@ -49,17 +49,31 @@ export async function deleteSession(sessionId: string): Promise<void> {
 export function streamChat(
   message: string,
   sessionId: string | null,
+  files?: File[],
 ): { stream: ReadableStream<string>; abort: () => void } {
   const controller = new AbortController();
   const stream = new ReadableStream<string>({
     async start(ctrl) {
       try {
-        const res = await fetch(`${CHAT_API}/api/chat/stream`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message, session_id: sessionId }),
-          signal: controller.signal,
-        });
+        let res: Response;
+        if (files && files.length > 0) {
+          const fd = new FormData();
+          fd.append('message', message);
+          if (sessionId) fd.append('session_id', sessionId);
+          files.forEach((f) => fd.append('files', f));
+          res = await fetch(`${CHAT_API}/api/chat/stream`, {
+            method: 'POST',
+            body: fd,
+            signal: controller.signal,
+          });
+        } else {
+          res = await fetch(`${CHAT_API}/api/chat/stream`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, session_id: sessionId }),
+            signal: controller.signal,
+          });
+        }
         const reader = res.body?.getReader();
         const decoder = new TextDecoder();
         if (!reader) {

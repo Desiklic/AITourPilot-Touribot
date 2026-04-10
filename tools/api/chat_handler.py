@@ -1,8 +1,10 @@
 """Chat handler: HTTP endpoints wrapping session.py for dashboard streaming."""
 
+import base64
 import json
 import logging
 import os
+import re
 import sqlite3
 import threading
 import uuid
@@ -11,7 +13,7 @@ from pathlib import Path
 from typing import Optional
 
 import anthropic
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -142,6 +144,114 @@ def _chat_model_cfg() -> tuple[str, int, float]:
 
 
 # ---------------------------------------------------------------------------
+# File upload helpers
+# ---------------------------------------------------------------------------
+
+UPLOADS_ROOT = PROJECT_ROOT / "data" / "uploads"
+SUPPORTED_IMAGE_MIMES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+BINARY_DOC_SUFFIXES = {".pdf", ".docx", ".doc"}
+MAX_TEXT_CHARS = 15_000
+
+
+def _sanitize_filename(name: str) -> str:
+    """Strip path components and replace unsafe characters."""
+    name = Path(name).name  # drop any directory traversal
+    name = re.sub(r"[^\w.\-]", "_", name)
+    return name or "upload"
+
+
+async def _save_uploaded_files(files: list[UploadFile]) -> list[dict]:
+    """Save UploadFile objects to dated subdirectory and return attachment metadata."""
+    date_dir = UPLOADS_ROOT / datetime.now().strftime("%Y-%m-%d")
+    date_dir.mkdir(parents=True, exist_ok=True)
+
+    attachments = []
+    for uf in files:
+        if uf.filename is None:
+            continue
+        safe_name = _sanitize_filename(uf.filename)
+        # Prefix with a short UUID fragment to avoid collisions
+        unique_name = f"{uuid.uuid4().hex[:8]}_{safe_name}"
+        dest = date_dir / unique_name
+
+        content = await uf.read()
+        dest.write_bytes(content)
+
+        attachments.append({
+            "filename": str(dest.relative_to(UPLOADS_ROOT)),
+            "display_name": uf.filename,
+            "mime_type": uf.content_type or "",
+            "size": len(content),
+        })
+    return attachments
+
+
+def _build_user_content(text: str, attachments: list | None) -> str | list:
+    """Return a plain string or multimodal content list for the user turn."""
+    if not attachments:
+        return text
+
+    content: list = []
+    for att in attachments:
+        local_path = UPLOADS_ROOT / att.get("filename", "")
+        mime = att.get("mime_type", "")
+        name = att.get("display_name", att.get("filename", "file"))
+
+        if mime in SUPPORTED_IMAGE_MIMES and local_path.exists():
+            try:
+                data = base64.standard_b64encode(local_path.read_bytes()).decode()
+                content.append({
+                    "type": "image",
+                    "source": {"type": "base64", "media_type": mime, "data": data},
+                })
+            except Exception as exc:
+                logger.warning("Failed to encode image %s: %s", local_path, exc)
+                content.append({"type": "text", "text": f"[Image attachment unavailable: {name}]"})
+
+        elif local_path.exists() and local_path.suffix.lower() in BINARY_DOC_SUFFIXES:
+            suffix = local_path.suffix.lower()
+            try:
+                if suffix == ".pdf":
+                    import pdfplumber
+                    with pdfplumber.open(str(local_path)) as pdf:
+                        extracted = "\n".join(
+                            page.extract_text() or "" for page in pdf.pages
+                        )
+                elif suffix in (".docx", ".doc"):
+                    import docx as _docx
+                    doc = _docx.Document(str(local_path))
+                    extracted = "\n".join(p.text for p in doc.paragraphs)
+                else:
+                    extracted = ""
+                content.append({
+                    "type": "text",
+                    "text": f"[Attached document: {name}]\n{extracted[:MAX_TEXT_CHARS]}",
+                })
+            except Exception as exc:
+                logger.warning("Failed to extract document %s: %s", local_path, exc)
+                content.append({
+                    "type": "text",
+                    "text": f"[Document attachment could not be read: {name}] Error: {exc}",
+                })
+
+        elif local_path.exists():
+            try:
+                file_text = local_path.read_text(encoding="utf-8", errors="replace")[:MAX_TEXT_CHARS]
+                content.append({"type": "text", "text": f"[Attached file: {name}]\n{file_text}"})
+            except Exception as exc:
+                logger.warning("Failed to read file %s: %s", local_path, exc)
+                content.append({"type": "text", "text": f"[File attachment unavailable: {name}]"})
+
+        else:
+            content.append({"type": "text", "text": f"[Attachment not found: {name}]"})
+
+    if text:
+        content.append({"type": "text", "text": text})
+
+    return content if content else text
+
+
+# ---------------------------------------------------------------------------
 # Request / response models
 # ---------------------------------------------------------------------------
 
@@ -168,17 +278,43 @@ def _sse(event_type: str, **data) -> str:
 
 
 @router.post("/stream")
-async def stream_chat(req: StreamRequest):
-    """SSE streaming chat endpoint.
+async def stream_chat(request: Request):
+    """SSE streaming chat endpoint — accepts both JSON and multipart/form-data.
 
     Streams text_delta events while Anthropic generates the response, then
     persists the conversation, extracts memories in the background, and emits
     a final done event.
     """
-    session_id = req.session_id or datetime.now().strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:6]
-    user_message = req.message.strip()
+    content_type = request.headers.get("content-type", "")
+    attachments: list = []
 
-    if not user_message:
+    if "multipart/form-data" in content_type:
+        form = await request.form()
+        raw_message = form.get("message", "") or ""
+        session_id_raw = form.get("session_id")
+        session_id = (
+            str(session_id_raw)
+            if session_id_raw
+            else datetime.now().strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:6]
+        )
+        uploaded: list[UploadFile] = [
+            v for v in form.getlist("files") if isinstance(v, UploadFile)
+        ]
+        if uploaded:
+            attachments = await _save_uploaded_files(uploaded)
+    else:
+        body = await request.json()
+        raw_message = body.get("message", "") or ""
+        session_id_raw = body.get("session_id")
+        session_id = (
+            str(session_id_raw)
+            if session_id_raw
+            else datetime.now().strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:6]
+        )
+
+    user_message = str(raw_message).strip()
+
+    if not user_message and not attachments:
         raise HTTPException(status_code=422, detail="message must not be empty")
 
     async def generate():
@@ -195,17 +331,20 @@ async def stream_chat(req: StreamRequest):
             system_prompt, additional_context, _museum_id = _assemble_context(user_message)
 
             if additional_context:
-                augmented_input = (
+                augmented_text = (
                     f"{user_message}\n\n---\n"
                     "[Context — do not repeat this to the user, use it to inform your response]\n"
                     f"{additional_context}"
                 )
             else:
-                augmented_input = user_message
+                augmented_text = user_message
+
+            # Build the user content — plain string or multimodal list with attachments
+            user_content = _build_user_content(augmented_text, attachments if attachments else None)
 
             # Build messages: history uses clean messages; current turn uses augmented
             messages = list(history)
-            messages.append({"role": "user", "content": augmented_input})
+            messages.append({"role": "user", "content": user_content})
 
             # --- stream from Anthropic (with tool-use agentic loop) ---
             client = _get_client()

@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { Upload } from 'lucide-react';
 import { ChatThread } from '@/components/chat/chat-thread';
 import { ChatInput } from '@/components/chat/chat-input';
+import type { ChatInputHandle } from '@/components/chat/chat-input';
 import { ChatSidebar } from '@/components/chat/chat-sidebar';
 import { useSidebarContent } from '@/components/layout/layout-shell';
 import { streamChat, getSessions, getMessages } from '@/lib/api/chat-api';
@@ -29,6 +31,9 @@ function ChatPageInner() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [promptPrefill, setPromptPrefill] = useState<string>('');
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const dragCounterRef = useRef(0);
+  const chatInputRef = useRef<ChatInputHandle>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
@@ -75,8 +80,8 @@ function ChatPageInner() {
       setMessages([]);
       setSessionId(null);
     }
-  // Only run on mount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // On mount: fetch sessions and load the most recent one (skip if prompt param present)
@@ -102,7 +107,7 @@ function ChatPageInner() {
       }
     };
     init();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scrollToBottom]);
 
   const handleSelectSession = useCallback(
@@ -141,21 +146,64 @@ function ChatPageInner() {
     return () => setSidebarContent(null);
   }, [sessionId, handleSelectSession, handleNewChat, handleSessionDeleted, setSidebarContent]);
 
+  // Full-screen drag/drop overlay (counter-ref pattern)
+  useEffect(() => {
+    const handleDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current++;
+      if (e.dataTransfer?.types.includes('Files')) {
+        setIsDraggingOver(true);
+      }
+    };
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current--;
+      if (dragCounterRef.current <= 0) {
+        dragCounterRef.current = 0;
+        setIsDraggingOver(false);
+      }
+    };
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current = 0;
+      setIsDraggingOver(false);
+      if (e.dataTransfer?.files?.length) {
+        chatInputRef.current?.addFiles(e.dataTransfer.files);
+      }
+    };
+
+    window.addEventListener('dragenter', handleDragEnter);
+    window.addEventListener('dragleave', handleDragLeave);
+    window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('drop', handleDrop);
+    return () => {
+      window.removeEventListener('dragenter', handleDragEnter);
+      window.removeEventListener('dragleave', handleDragLeave);
+      window.removeEventListener('dragover', handleDragOver);
+      window.removeEventListener('drop', handleDrop);
+    };
+  }, []);
+
   // Active session title for the header
   const activeSession = sessions.find((s) => s.session_id === sessionId);
   const activeTitle = activeSession?.title || activeSession?.preview || null;
 
   const handleSend = useCallback(
-    async (message: string) => {
+    async (message: string, files: File[]) => {
       if (sending) return;
       setSending(true);
 
-      // Add user message optimistically
+      // Optimistic user message — include attachment names so user sees what was sent
+      const attachmentSuffix =
+        files.length > 0 ? '\n\n📎 ' + files.map((f) => f.name).join(', ') : '';
       const tempUserMsg: ChatMessage = {
         id: Date.now(),
         session_id: sessionId || '',
         role: 'user',
-        content: message,
+        content: message + attachmentSuffix,
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, tempUserMsg]);
@@ -177,7 +225,7 @@ function ChatPageInner() {
       let streamSessionId = sessionId;
 
       try {
-        const { stream, abort } = streamChat(message, sessionId);
+        const { stream, abort } = streamChat(message, sessionId, files);
         abortRef.current = abort;
 
         const reader = stream.getReader();
@@ -271,36 +319,47 @@ function ChatPageInner() {
         </div>
       </div>
 
-      {/* Chat thread — scrollable */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto min-h-0"
-        style={{ overscrollBehavior: 'contain' }}
-      >
-        <ChatThread messages={messages} loading={loading} />
-      </div>
-
-      {/* Typing indicator — only when waiting for first token */}
-      {sending && messages[messages.length - 1]?.content === '' && (
-        <div className="px-6 py-2 flex items-center gap-2 shrink-0">
-          <div className="flex gap-1">
-            <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:0ms]" />
-            <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:150ms]" />
-            <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:300ms]" />
-          </div>
-          <span className="text-xs text-muted-foreground">Touri is thinking...</span>
+      {/* Chat thread — scrollable — relative for the drag overlay */}
+      <div className="relative flex-1 min-h-0 flex flex-col">
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto min-h-0"
+          style={{ overscrollBehavior: 'contain' }}
+        >
+          <ChatThread messages={messages} loading={loading} />
         </div>
-      )}
 
-      {/* Input */}
-      <div className="shrink-0">
-        <ChatInput
-          onSend={handleSend}
-          sending={sending}
-          disabled={false}
-          initialValue={promptPrefill}
-          onInitialValueConsumed={() => setPromptPrefill('')}
-        />
+        {/* Typing indicator — only when waiting for first token */}
+        {sending && messages[messages.length - 1]?.content === '' && (
+          <div className="px-6 py-2 flex items-center gap-2 shrink-0">
+            <div className="flex gap-1">
+              <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:0ms]" />
+              <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:150ms]" />
+              <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:300ms]" />
+            </div>
+            <span className="text-xs text-muted-foreground">Touri is thinking...</span>
+          </div>
+        )}
+
+        {/* Input */}
+        <div className="shrink-0">
+          <ChatInput
+            ref={chatInputRef}
+            onSend={handleSend}
+            sending={sending}
+            disabled={false}
+            initialValue={promptPrefill}
+            onInitialValueConsumed={() => setPromptPrefill('')}
+          />
+        </div>
+
+        {/* Full-screen drag/drop overlay */}
+        {isDraggingOver && (
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm border-2 border-dashed border-primary/40 rounded-lg">
+            <Upload className="w-10 h-10 text-primary mb-2" />
+            <p className="text-sm font-medium">Drop files here to add to chat</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -154,3 +154,9 @@ deep_research:
       max_queries: 20
       max_pages: 20
       max_gap_iterations: 4
+    exhaustive:
+      max_queries: 40
+      max_pages: 40
+      max_gap_iterations: 6
+  budget:
+    exhaustive_session_usd: 3.0

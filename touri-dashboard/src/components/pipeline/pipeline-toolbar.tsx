@@ -19,8 +19,10 @@ export function PipelineToolbar({
   onStageFilterChange,
   stageCounts,
 }: PipelineToolbarProps) {
-  // Populated stages (have at least 1 museum)
-  const populatedStages = PIPELINE_STAGES.filter((s) => (stageCounts[s.stage] ?? 0) > 0);
+  // Always show stages 0-6, plus any higher stages that are populated
+  const visibleStages = PIPELINE_STAGES.filter(
+    (s) => s.stage <= 6 || (stageCounts[s.stage] ?? 0) > 0
+  );
 
   return (
     <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
@@ -39,7 +41,7 @@ export function PipelineToolbar({
           <span className="opacity-70">{Object.values(stageCounts).reduce((a, b) => a + b, 0)}</span>
         </button>
 
-        {populatedStages.map((stage) => {
+        {visibleStages.map((stage) => {
           const count = stageCounts[stage.stage] ?? 0;
           const isActive = stageFilter === stage.stage;
           return (

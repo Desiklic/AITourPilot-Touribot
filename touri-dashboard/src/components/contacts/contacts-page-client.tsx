@@ -83,7 +83,7 @@ export function ContactsPageClient({ initialContacts }: ContactsPageClientProps)
       <div className="mb-4">
         <h1 className="text-2xl font-bold">Contacts</h1>
         <p className="text-sm text-muted-foreground">
-          {initialContacts.length} contact{initialContacts.length !== 1 ? 's' : ''} across all museums
+          {initialContacts.length} contacts across {new Set(initialContacts.map(c => c.museum_id)).size} museums
         </p>
       </div>
 

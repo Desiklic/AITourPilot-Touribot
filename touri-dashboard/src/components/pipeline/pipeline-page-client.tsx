@@ -124,7 +124,7 @@ export function PipelinePageClient({ initialMuseums }: PipelinePageClientProps) 
       <div className="mb-4">
         <h1 className="text-2xl font-bold">Pipeline</h1>
         <p className="text-sm text-muted-foreground">
-          {museums.length} museum{museums.length !== 1 ? 's' : ''} tracked
+          {museums.length} museums tracked
         </p>
       </div>
 

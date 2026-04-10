@@ -20,3 +20,22 @@
  GET /chat 200 in 38ms (compile: 2ms, render: 36ms)
  GET /chat 200 in 22ms (compile: 2ms, render: 20ms)
  GET /chat 200 in 215ms (compile: 12ms, render: 203ms)
+✓ Compiled in 380ms
+✓ Compiled in 56ms
+✓ Compiled in 193ms
+ GET /chat 200 in 330ms (compile: 122ms, render: 209ms)
+ GET /chat 200 in 237ms (compile: 69ms, render: 168ms)
+ GET /tasks 200 in 583ms (compile: 562ms, render: 22ms)
+ GET /api/followups 200 in 299ms (compile: 284ms, render: 14ms)
+ GET /api/followups 200 in 305ms (compile: 302ms, render: 3ms)
+ GET /pipeline/56 200 in 681ms (compile: 639ms, render: 42ms)
+ GET /chat?prompt=Draft+email+for+BTU+Cottbus-Senftenberg 200 in 37ms (compile: 7ms, render: 30ms)
+ GET /calendar 200 in 392ms (compile: 382ms, render: 10ms)
+ GET /api/calendar?start=2026-04-01&end=2026-04-30 200 in 96ms (compile: 93ms, render: 4ms)
+ GET /api/calendar?start=2026-04-01&end=2026-04-30 200 in 95ms (compile: 93ms, render: 1773µs)
+ GET /chat 200 in 35ms (compile: 13ms, render: 22ms)
+ GET /pipeline 200 in 95ms (compile: 72ms, render: 24ms)
+ GET /chat 200 in 41ms (compile: 21ms, render: 19ms)
+✓ Compiled in 268ms
+ GET /chat 200 in 356ms (compile: 105ms, render: 250ms)
+✓ Compiled in 211ms

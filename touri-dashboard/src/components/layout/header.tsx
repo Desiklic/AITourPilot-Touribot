@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { format } from 'date-fns';
-import { MessageCircle, CheckSquare, CalendarDays, Kanban, BarChart2 } from 'lucide-react';
+import { MessageCircle, CheckSquare, CalendarDays, Kanban, BarChart2, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const HEADER_NAV = [
   { icon: MessageCircle, label: 'Chat', href: '/chat' },
   { icon: CheckSquare, label: 'Tasks', href: '/tasks' },
   { icon: CalendarDays, label: 'Calendar', href: '/calendar' },
+  { icon: Users, label: 'Contacts', href: '/contacts' },
   { icon: Kanban, label: 'Pipeline', href: '/pipeline' },
   { icon: BarChart2, label: 'Stats', href: '/stats' },
 ];

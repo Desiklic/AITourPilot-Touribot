@@ -47,6 +47,18 @@ export function PipelinePageClient({ initialMuseums }: PipelinePageClientProps) 
     }
   }, [searchParams]);
 
+  // Read ?museum= query param on mount and auto-open detail sheet
+  useEffect(() => {
+    const museumParam = searchParams.get('museum');
+    if (museumParam !== null) {
+      const parsed = parseInt(museumParam, 10);
+      if (!isNaN(parsed)) {
+        setSelectedMuseumId(parsed);
+        setSheetOpen(true);
+      }
+    }
+  }, [searchParams]);
+
   // Refetch museums from API
   const refetch = useCallback(async () => {
     try {

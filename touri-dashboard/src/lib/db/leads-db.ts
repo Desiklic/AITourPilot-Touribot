@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
-import type { Museum, Contact, Interaction, Research, CalendarEvent, FollowUpTask } from '@/lib/types';
+import type { Museum, Contact, Interaction, Research, CalendarEvent, FollowUpTask, ContactListItem } from '@/lib/types';
 import { PIPELINE_STAGES } from '@/lib/constants';
 
 const TOURIBOT_HOME = process.env.TOURIBOT_HOME;
@@ -473,4 +473,97 @@ export function getStats(): DashboardStats {
       velocity,
     },
   };
+}
+
+// ─── Contacts ────────────────────────────────────────────────────────────────
+
+// Raw row returned by the contacts query (before JS-derived fields)
+type ContactRow = Omit<ContactListItem, 'engagement_level'> & {
+  inbound_count: number;
+};
+
+const CONTACTS_BASE_QUERY = `
+  SELECT
+    c.id, c.full_name, c.role, c.email, c.linkedin_url,
+    c.preferred_language, c.is_primary, c.created_at,
+    m.id   as museum_id,
+    m.name as museum_name,
+    m.stage as museum_stage,
+    m.source as museum_source,
+    m.city   as museum_city,
+    m.country as museum_country,
+    m.website as museum_website,
+    (SELECT COUNT(*)   FROM interactions WHERE museum_id = c.museum_id)                                           as interaction_count,
+    (SELECT MAX(created_at)   FROM interactions WHERE museum_id = c.museum_id)                                   as last_interaction,
+    (SELECT MAX(follow_up_date) FROM interactions WHERE museum_id = c.museum_id AND follow_up_date IS NOT NULL)  as next_followup,
+    (SELECT COUNT(*)   FROM interactions WHERE museum_id = c.museum_id AND direction = 'inbound')                as inbound_count
+  FROM contacts c
+  JOIN museums m ON m.id = c.museum_id
+`;
+
+function deriveEngagementLevel(row: ContactRow): ContactListItem['engagement_level'] {
+  if (row.museum_stage >= 6) return 'active';
+  if (row.inbound_count > 0) return 'responded';
+  if (row.interaction_count > 0) return 'outreach';
+  return 'none';
+}
+
+function toContactListItem(row: ContactRow): ContactListItem {
+  const { inbound_count, ...rest } = row;
+  return { ...rest, engagement_level: deriveEngagementLevel(row) };
+}
+
+export function getContacts(source?: string, stage?: number): ContactListItem[] {
+  const database = getDb();
+
+  const conditions: string[] = [];
+  const params: (string | number)[] = [];
+
+  if (source !== undefined) {
+    conditions.push('m.source = ?');
+    params.push(source);
+  }
+  if (stage !== undefined) {
+    conditions.push('m.stage = ?');
+    params.push(stage);
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const sql = `
+    ${CONTACTS_BASE_QUERY}
+    ${whereClause}
+    ORDER BY last_interaction DESC NULLS LAST, c.full_name ASC
+  `;
+
+  const stmt = database.prepare(sql);
+  const rows = (params.length > 0 ? stmt.all(...params) : stmt.all()) as ContactRow[];
+  return rows.map(toContactListItem);
+}
+
+export function getContactDetail(id: number): {
+  contact: ContactListItem | undefined;
+  interactions: InteractionRow[];
+  memories: import('@/lib/types').Memory[];
+} {
+  const database = getDb();
+
+  const contactStmt = database.prepare<[number]>(
+    `${CONTACTS_BASE_QUERY} WHERE c.id = ?`
+  );
+  const contactRow = contactStmt.get(id) as ContactRow | undefined;
+
+  if (!contactRow) {
+    return { contact: undefined, interactions: [], memories: [] };
+  }
+
+  const contact = toContactListItem(contactRow);
+
+  // Reuse existing interaction history function
+  const interactions = getInteractionHistory(contact.museum_id);
+
+  // Memories from memory.db (separate DB — import lazily to avoid circular deps)
+  const { getMemories } = require('@/lib/db/memory-db') as typeof import('@/lib/db/memory-db');
+  const memories = getMemories(undefined, undefined, contact.museum_id);
+
+  return { contact, interactions, memories };
 }

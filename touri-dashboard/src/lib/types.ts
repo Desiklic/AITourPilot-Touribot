@@ -118,6 +118,31 @@ export interface CalendarEvent {
   type: 'follow_up' | 'demo'; // derived
 }
 
+// Contact list item returned by /api/contacts (Contact + joined museum fields + derived stats)
+export interface ContactListItem {
+  id: number;
+  full_name: string;
+  role: string | null;
+  email: string | null;
+  linkedin_url: string | null;
+  preferred_language: string;
+  is_primary: 0 | 1;
+  created_at: string;
+  // Joined museum fields
+  museum_id: number;
+  museum_name: string;
+  museum_stage: number;
+  museum_source: string | null;
+  museum_city: string | null;
+  museum_country: string | null;
+  museum_website: string | null;
+  // Derived
+  interaction_count: number;
+  last_interaction: string | null;
+  next_followup: string | null;
+  engagement_level: 'none' | 'outreach' | 'responded' | 'active';
+}
+
 // Follow-up task for the task board
 export interface FollowUpTask {
   id: number;

@@ -355,7 +355,7 @@ async def stream_chat(request: Request):
             # messages_for_api grows when tool rounds add assistant + tool_result turns
             messages_for_api = list(messages)
             full_response = ""
-            max_tool_rounds = 5  # prevent infinite loops
+            max_tool_rounds = 15  # allow multi-step research tasks
 
             try:
                 for _round in range(max_tool_rounds):

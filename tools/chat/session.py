@@ -683,7 +683,7 @@ def _extract_and_save_memories(user_message: str, assistant_response: str, clien
         max_tokens = _load_settings().get("models", {}).get("memory_extraction", {}).get("max_tokens", 1024)
 
         # Truncate response to keep extraction prompt manageable
-        response_truncated = assistant_response[:1500]
+        response_truncated = assistant_response[:3000]
 
         extraction_message = f"""User said: {user_message}
 

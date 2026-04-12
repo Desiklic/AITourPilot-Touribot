@@ -2637,3 +2637,494 @@ INFO:     Uvicorn running on http://127.0.0.1:8766 (Press CTRL+C to quit)
 INFO:     127.0.0.1:62732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
 INFO:     127.0.0.1:62732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
 INFO:     127.0.0.1:62732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62732 - "OPTIONS /api/chat/sessions/20260412-232138-8c4f2b HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62732 - "DELETE /api/chat/sessions/20260412-232138-8c4f2b HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62758 - "GET /api/chat/messages?session_id=20260409-153727-224a89 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62732 - "POST /api/chat/stream HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62760 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62780 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62780 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62780 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62780 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62780 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62780 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62780 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62780 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62780 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62780 - "POST /api/chat/stream HTTP/1.1" 200 OK
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+Jina HTTP 422 for https://www.historisches-museum-saar.de
+Jina HTTP 400 for https://www.museumcollectiebrands.nl
+Jina HTTP 400 for https://www.vivant-production.com
+Jina HTTP 400 for https://www.netzwerk-industriewelt-aargau.ch
+Jina HTTP 400 for https://www.slot-loevestein.nl
+Jina HTTP 422 for https://www.naturhistoriska.se
+Jina HTTP 400 for https://www.mah.ch
+Jina HTTP 422 for https://www.cdmatics.com
+Jina HTTP 422 for https://www.mahgeneve.ch
+INFO:     127.0.0.1:62854 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62865 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62824 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62876 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62880 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63013 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63018 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63016 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63013 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63020 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63022 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63024 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63016 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63018 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63020 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63013 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63022 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63024 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63018 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63016 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63020 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63013 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63024 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63022 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63016 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63018 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63020 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63013 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63024 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63013 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63024 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63013 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63024 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63024 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63024 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63024 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63024 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63024 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63024 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63024 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63038 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63059 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63142 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63184 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63209 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63239 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63260 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63286 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63308 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63383 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63424 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63521 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63537 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63560 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63584 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63602 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63622 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63630 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63650 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63671 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63709 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63721 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63739 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63749 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63794 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63823 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63937 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64072 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64228 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64266 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64291 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64312 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64330 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64361 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64401 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64447 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64463 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64488 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64512 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64571 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64607 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64624 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64648 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64682 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64700 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64720 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64732 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64748 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64803 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64818 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64833 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64833 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64833 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64833 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64833 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64833 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64833 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64833 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64833 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64833 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64833 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64833 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64833 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64833 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64856 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64856 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64856 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64856 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64856 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64856 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64856 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64856 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64856 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64876 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [76099]
+/Users/hermannkudlich/Documents/Miniforge3/envs/comfyenv/lib/python3.12/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+INFO:     Started server process [81419]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8766 (Press CTRL+C to quit)
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "OPTIONS /api/chat/stream HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "POST /api/chat/stream HTTP/1.1" 200 OK
+  Loading context for SS Great Britain...
+  Loading research resources...
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+INFO:     127.0.0.1:64897 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64922 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64918 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64914 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64925 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64897 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64897 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64897 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64878 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64977 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64977 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64977 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64977 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64977 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64977 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64977 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65005 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65005 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65005 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65005 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65005 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65005 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65005 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65005 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65005 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65005 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65005 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65005 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65005 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65005 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65005 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65005 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65097 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65097 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65097 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65097 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65097 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65097 - "POST /api/chat/stream HTTP/1.1" 200 OK
+TAVILY_API_KEY not set — search skipped
+TAVILY_API_KEY not set — search skipped
+INFO:     127.0.0.1:65126 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65097 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65126 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65126 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65126 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65126 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65126 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65126 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65126 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65126 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65151 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65261 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65261 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [81419]
+/Users/hermannkudlich/Documents/Miniforge3/envs/comfyenv/lib/python3.12/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+INFO:     Started server process [84096]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8766 (Press CTRL+C to quit)
+INFO:     127.0.0.1:65269 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "OPTIONS /api/chat/sessions/20260413-002425-2100f0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "DELETE /api/chat/sessions/20260413-002425-2100f0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "OPTIONS /api/chat/stream HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "POST /api/chat/stream HTTP/1.1" 200 OK
+  Loading context for SS Great Britain...
+  Loading research resources...
+INFO:     127.0.0.1:65341 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65341 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65341 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65415 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65415 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65415 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65415 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65415 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65415 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65415 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65415 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65415 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65415 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65415 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65415 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65443 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65467 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65482 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65493 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65509 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49157 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49225 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49260 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49286 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49314 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49339 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49410 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49416 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49416 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49418 - "GET /api/chat/messages?session_id=20260413-003745-b9382a HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49416 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49420 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49460 - "GET /api/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49460 - "GET /api/chat/sessions HTTP/1.1" 200 OK

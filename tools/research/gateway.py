@@ -4,13 +4,26 @@ Research areas use Gemini for cost-efficiency and large context windows.
 Falls back to Anthropic if Google API key is not configured.
 """
 import json
+import logging
 import os
+import time
 import urllib.request
+from pathlib import Path
 from types import SimpleNamespace
 
 import anthropic
 
 _anthropic_client = None
+
+# Gateway logger — writes to logs/gateway.log for Gemini failure tracking
+_log_dir = Path(os.environ.get("TOURIBOT_HOME", Path(__file__).parent.parent.parent)) / "logs"
+_log_dir.mkdir(parents=True, exist_ok=True)
+_file_handler = logging.FileHandler(str(_log_dir / "gateway.log"))
+_file_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+logger = logging.getLogger("touribot.gateway")
+if not logger.handlers:
+    logger.addHandler(_file_handler)
+    logger.setLevel(logging.INFO)
 
 
 def _get_anthropic_client() -> anthropic.Anthropic:
@@ -57,9 +70,25 @@ def _has_gemini_key() -> bool:
     return bool(os.environ.get("GOOGLE_AI_API_KEY"))
 
 
+def _get_area_max_tokens(area: str) -> int:
+    """Read max_tokens for an area from settings.yaml."""
+    try:
+        import yaml
+        settings_path = os.path.join(os.environ.get("TOURIBOT_HOME", "."), "args", "settings.yaml")
+        with open(settings_path) as f:
+            settings = yaml.safe_load(f) or {}
+        return settings.get("models", {}).get(area, {}).get("max_tokens", 4096)
+    except Exception:
+        return 4096
+
+
 def _call_gemini(model: str, messages: list, system: str = None,
                  max_tokens: int = 4096, temperature: float = 0.7) -> SimpleNamespace:
-    """Call Google Gemini via REST API (no SDK dependency)."""
+    """Call Google Gemini via REST API (no SDK dependency).
+
+    Retries up to 3 times with exponential backoff on 5xx errors and timeouts.
+    4xx errors are returned immediately (real errors like bad API key).
+    """
     api_key = os.environ.get("GOOGLE_AI_API_KEY")
     if not api_key:
         return SimpleNamespace(ok=False, text="", cost_usd=0.0, error="GOOGLE_AI_API_KEY not set")
@@ -92,27 +121,49 @@ def _call_gemini(model: str, messages: list, system: str = None,
         method="POST",
     )
 
-    try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            result = json.loads(resp.read())
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                result = json.loads(resp.read())
 
-        # Extract text from response
-        candidates = result.get("candidates", [])
-        if not candidates:
-            return SimpleNamespace(ok=False, text="", cost_usd=0.0, error="No candidates in Gemini response")
+            # Extract text from response
+            candidates = result.get("candidates", [])
+            if not candidates:
+                return SimpleNamespace(ok=False, text="", cost_usd=0.0, error="No candidates in Gemini response")
 
-        parts = candidates[0].get("content", {}).get("parts", [])
-        text = "".join(p.get("text", "") for p in parts)
+            parts = candidates[0].get("content", {}).get("parts", [])
+            text = "".join(p.get("text", "") for p in parts)
 
-        # Extract token usage
-        usage = result.get("usageMetadata", {})
-        input_tokens = usage.get("promptTokenCount", 0)
-        output_tokens = usage.get("candidatesTokenCount", 0)
-        cost = _estimate_cost(model, input_tokens, output_tokens)
+            # Extract token usage
+            usage = result.get("usageMetadata", {})
+            input_tokens = usage.get("promptTokenCount", 0)
+            output_tokens = usage.get("candidatesTokenCount", 0)
+            cost = _estimate_cost(model, input_tokens, output_tokens)
 
-        return SimpleNamespace(ok=True, text=text, cost_usd=cost, error=None)
-    except Exception as e:
-        return SimpleNamespace(ok=False, text="", cost_usd=0.0, error=str(e))
+            return SimpleNamespace(ok=True, text=text, cost_usd=cost, error=None)
+
+        except urllib.error.HTTPError as e:
+            if e.code >= 500 and attempt < max_retries - 1:
+                wait = 2 ** attempt  # exponential backoff: 1s, 2s, 4s
+                logger.warning("Gemini HTTP %d on attempt %d — retrying in %ds", e.code, attempt + 1, wait)
+                time.sleep(wait)
+                continue
+            return SimpleNamespace(ok=False, text="", cost_usd=0.0, error=f"Gemini HTTP {e.code}: {e.reason}")
+
+        except (urllib.error.URLError, TimeoutError) as e:
+            if attempt < max_retries - 1:
+                wait = 2 ** attempt
+                logger.warning("Gemini timeout/network on attempt %d — retrying in %ds: %s", attempt + 1, wait, e)
+                time.sleep(wait)
+                continue
+            return SimpleNamespace(ok=False, text="", cost_usd=0.0, error=f"Gemini timeout/network: {e}")
+
+        except Exception as e:
+            return SimpleNamespace(ok=False, text="", cost_usd=0.0, error=str(e))
+
+    # Should not be reached, but safety net
+    return SimpleNamespace(ok=False, text="", cost_usd=0.0, error="Gemini: max retries exceeded")
 
 
 def _call_anthropic(model: str, messages: list, system: str = None,
@@ -152,10 +203,10 @@ def chat(area: str, messages: list, system: str = None,
         result = _call_gemini(model, messages, system, max_tokens, temperature)
         if result.ok:
             return result
-        # Gemini failed — fall back to Anthropic
-        import logging
-        logging.getLogger(__name__).warning(
-            "Gemini call failed for area=%s, falling back to Anthropic: %s", area, result.error
+        # Gemini failed — log to gateway.log and fall back to Anthropic
+        logger.warning(
+            "Gemini call failed for area=%s model=%s, falling back to Anthropic: %s",
+            area, model, result.error,
         )
 
     # Anthropic fallback (or primary if no Gemini key)

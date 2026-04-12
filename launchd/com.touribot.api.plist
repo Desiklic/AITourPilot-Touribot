@@ -7,14 +7,8 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/hermannkudlich/Documents/Miniforge3/envs/comfyenv/bin/python</string>
-        <string>-m</string>
-        <string>uvicorn</string>
-        <string>tools.api.server:app</string>
-        <string>--host</string>
-        <string>127.0.0.1</string>
-        <string>--port</string>
-        <string>8766</string>
+        <string>/bin/bash</string>
+        <string>/Users/hermannkudlich/Documents/ClaudeProjects/AITourPilot-Touribot/start_api.sh</string>
     </array>
 
     <key>WorkingDirectory</key>

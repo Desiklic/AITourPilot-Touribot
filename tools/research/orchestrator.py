@@ -26,6 +26,7 @@ from tools.research.research_state import (
 from tools.research.research_planner import plan_queries
 from tools.research.research_evaluator import evaluate_coverage
 from tools.research.research_synthesizer import synthesize
+from tools.research.research_budget import ResearchBudget
 
 logger = logging.getLogger(__name__)
 
@@ -95,23 +96,38 @@ def run_research(query: str, depth: str = "standard",
     _print(f"[{state.session_id}] Research started: {query[:80]}")
     _print(f"[{state.session_id}] Depth: {depth} — {max_queries} queries, {max_pages} pages, {max_gaps} gap iterations")
 
+    budget = ResearchBudget(session_id=state.session_id, depth=depth)
+    _print(f"[{state.session_id}] Budget cap: ${budget.cap:.2f}")
+
     _checkpoint(state)
 
     try:
         # Phase 1: Planning
         _phase_planning(state, max_queries)
+        budget.record(state.total_cost_usd)
         _checkpoint(state)
 
         # Phase 2+: Discovery → Deep Reading → Gap Analysis loop
         gap_iterations = 0
         while True:
+            if budget.exhausted():
+                _print(f"[{state.session_id}] Budget exhausted before discovery — skipping to synthesis")
+                break
+
             _phase_discovery(state, max_queries)
+            budget.record(state.total_cost_usd - budget.spent)
             _checkpoint(state)
 
+            if budget.exhausted():
+                _print(f"[{state.session_id}] Budget exhausted after discovery — skipping to synthesis")
+                break
+
             _phase_deep_reading(state, max_pages)
+            budget.record(state.total_cost_usd - budget.spent)
             _checkpoint(state)
 
             eval_result = _phase_gap_analysis(state)
+            budget.record(state.total_cost_usd - budget.spent)
             _checkpoint(state)
 
             if eval_result.is_sufficient:
@@ -120,6 +136,10 @@ def run_research(query: str, depth: str = "standard",
 
             if gap_iterations >= max_gaps:
                 _print(f"[{state.session_id}] Max gap iterations ({max_gaps}) reached — synthesizing with coverage={eval_result.coverage_score:.2f}")
+                break
+
+            if budget.exhausted():
+                _print(f"[{state.session_id}] Budget exhausted after gap analysis — skipping to synthesis")
                 break
 
             # Push new gap queries onto the queue for next discovery pass
@@ -151,6 +171,28 @@ def run_research(query: str, depth: str = "standard",
         _checkpoint(state)
         logger.exception("Research [%s] failed: %s", state.session_id, e)
         _print(f"[{state.session_id}] ERROR: {e}")
+
+        # Write error to research log for visibility
+        error_log = PROJECT_ROOT / "logs" / "research_errors.log"
+        try:
+            error_log.parent.mkdir(parents=True, exist_ok=True)
+            with open(error_log, "a") as f:
+                ts = datetime.now().isoformat()
+                f.write(f"[{ts}] [{state.session_id}] Research failed for '{state.query}': {str(e)}\n")
+        except Exception:
+            pass
+
+        # Save error to memory.db so Touri knows about it next time
+        try:
+            from tools.memory.memory_write import write_memory
+            write_memory(
+                content=f"Research failed for '{state.query}': {str(e)[:200]}",
+                memory_type="general",
+                importance=4,
+                source="research",
+            )
+        except Exception:
+            pass
 
     return state.session_id
 
@@ -215,6 +257,7 @@ def _phase_deep_reading(state: ResearchState, max_pages: int) -> None:
 
     _print(f"[{state.session_id}] Phase: deep_reading — reading {len(to_read)} pages")
 
+    pages_read = 0
     for i, excerpt in enumerate(to_read):
         full_text = fetch_page(excerpt.url)
         if not full_text:
@@ -223,6 +266,7 @@ def _phase_deep_reading(state: ResearchState, max_pages: int) -> None:
         excerpt.full_text = full_text
         excerpt.fetched_at = datetime.now().isoformat()
         state.page_reads += 1
+        pages_read += 1
 
         # Summarize with Haiku (cheap, fast)
         summary_resp = chat(
@@ -235,8 +279,9 @@ def _phase_deep_reading(state: ResearchState, max_pages: int) -> None:
             state.llm_calls += 1
             state.total_cost_usd += summary_resp.cost_usd
 
-        if (i + 1) % 5 == 0:
-            _print(f"[{state.session_id}] Read {i + 1}/{len(to_read)} pages so far...")
+        if pages_read % 5 == 0:
+            _checkpoint(state)
+            _print(f"[{state.session_id}] Read {pages_read}/{len(to_read)} pages so far...")
 
     _print(f"[{state.session_id}] Deep reading complete — {state.page_reads} pages total")
 

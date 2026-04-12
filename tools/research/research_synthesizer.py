@@ -146,7 +146,7 @@ def _synthesize_single_pass(state) -> tuple:
         )
 
         resp = chat(model, [{"role": "user", "content": prompt}],
-                    system=_SYNTHESIS_SYSTEM, max_tokens=8192)
+                    system=_SYNTHESIS_SYSTEM, max_tokens=32768)
         total_cost += getattr(resp, "cost_usd", 0.0)
 
         if resp.ok and resp.text and len(resp.text) > 500:
@@ -209,7 +209,7 @@ def _synthesize_multi_pass(state) -> tuple:
             n=len(assigned),
         )
         resp = chat("deep_research", [{"role": "user", "content": prompt}],
-                    system=_SYNTHESIS_SYSTEM, max_tokens=8192)
+                    system=_SYNTHESIS_SYSTEM, max_tokens=32768)
         total_cost += getattr(resp, "cost_usd", 0.0)
 
         if resp.ok and resp.text and len(resp.text) > 200:
@@ -236,7 +236,7 @@ def _synthesize_multi_pass(state) -> tuple:
         source_list=source_list,
     )
     merge_resp = chat("deep_research", [{"role": "user", "content": merge_prompt}],
-                      system=_SYNTHESIS_SYSTEM, max_tokens=8192)
+                      system=_SYNTHESIS_SYSTEM, max_tokens=32768)
     total_cost += getattr(merge_resp, "cost_usd", 0.0)
 
     if merge_resp.ok and merge_resp.text and len(merge_resp.text) > 500:

@@ -7,11 +7,8 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/hermannkudlich/.nvm/versions/node/v20.19.2/bin/npx</string>
-        <string>next</string>
-        <string>dev</string>
-        <string>--port</string>
-        <string>4003</string>
+        <string>/bin/bash</string>
+        <string>/Users/hermannkudlich/Documents/ClaudeProjects/AITourPilot-Touribot/start_dashboard.sh</string>
     </array>
 
     <key>WorkingDirectory</key>

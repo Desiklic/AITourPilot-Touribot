@@ -8,9 +8,6 @@
 
 ## Auto-Promoted
 
-- [2026-04-07] [MUSEUM: BTU Cottbus] Dr. Miriam-Esther Owesle is academic staff in Art History dept, researches 'Museen im digitalen Wandel' (museums in digital transformation). Has museum/gallery curatorial experience, runs Guthmann Akademie Berlin, teaches museology. BTU has a Kunst & Campus program with QR-code guided art tours on campus (natural upgrade to AI guide). BLMK Dieselkraftwerk is a major art museum in Cottbus that collaborates with BTU - 42000+ works, largest GDR art collection. BTU runs the first UNESCO World Heritage Studies masters program. Demo booked April 7 2026 14:00.
-- [2026-04-07] [MUSEUM: BTU Cottbus] DEMO NO-SHOW: Dr. Owesle hat das Meeting am 7. April 2026 14:00 nicht wahrgenommen. Hermann hat umfangreiche Vorbereitung gemacht: Talking Points auf Deutsch (digitale Transformation, Visitor Experience, Forschungsrelevanz), antizipierte Fragen mit Antworten (Technologie, Museumspraxis, Forschung), und Demo-Szenarien (KHM Wien Vermeer, Albertina Monet). Follow-up Email gesendet von hermann@aitourpilot.com mit Angebot den Termin nachzuholen. Status: Warten auf Antwort. Kontakt bleibt warm - ihr Forschungsgebiet 'Museen im digitalen Wandel' ist ein perfekter Match.
-- [2026-04-09] Touri's core function is drafting personalized outreach emails, building research packages, scoring/categorizing replies, drafting follow-ups, and tracking outreach status for AITourPilot pilot recruitment [MUSEUM: Multiple]
 - [2026-04-09] Target outreach window is April-May with approximately 7 weeks remaining until campaign close
 - [2026-04-09] Touri does not send emails directly, write code, manage calendars, or invent museum facts
 - [2026-04-09] 52 museums remain at Stage 0 (no outreach initiated)
@@ -34,3 +31,9 @@
 - [2026-04-10] Alexandre from WE REV'ART is a low-priority lead. Hermann has decided not to contact him but wants him kept in the database.
 - [2026-04-10] AITourPilot has two separate lead lists: (1) LinkedIn campaign demo interest signups (Dec 2024–Mar 2025) — considered warm, high-priority leads; (2) MailerLite website landing page signups — passive interest / newsletter audience. Source tracking is important to Hermann.
 - [2026-04-10] Elisa Gravil (elisa.gravil@museovation.co) signed up via MailerLite. She is from Museovation, a museum consultancy — flagged as a high-value new contact with no LinkedIn list equivalent.
+- [2026-04-12] BTU Cottbus-Senftenberg is at Stage 6 (Demo Scheduled) and flagged as stale with 5 days idle. Needs follow-up.
+- [2026-04-12] Universalmuseum Joanneum and Joanneum Research are two distinct institutions and must not be confused in outreach. Only Universalmuseum Joanneum is a museum prospect.
+- [2026-04-13] SS Great Britain outreach pitch angle: The museum's strong USA and Australian visitor base (heritage/ancestral tourism) makes multilingual and contextual audio guides especially relevant — these visitors travel specifically for personal connection to the ship's history and would benefit from deeper storytelling.
+- [2026-04-13] SS Great Britain (Bristol) top 5 visitor source countries: 1) UK/England (domestic majority), 2) Germany (#1 holiday source market for Bristol), 3) USA (#2 holiday market + transatlantic heritage angle), 4) Australia (ship made 32 voyages to Australia 1852–1876, strong ancestral tourism pull), 5) Spain or France (Spain is #2 holiday market by visits; France is largest overall overseas source for Bristol).
+- [2026-04-13] SS Great Britain CEO made a trip to Australia (and China) in 2018 specifically to cultivate those visitor markets, confirming Australia is an actively pursued audience for the museum.
+- [2026-04-13] For SS Great Britain outreach, the three highest-ROI languages for an AITourPilot pilot are English (US), German, and Australian English — these visitor segments arrive with high emotional investment in the ship's story, making conversational AI more valuable than static audio guides.

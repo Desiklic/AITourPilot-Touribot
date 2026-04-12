@@ -736,23 +736,31 @@ async def start_research(request: Request):
 
     if not query:
         raise HTTPException(status_code=422, detail="query must not be empty")
-    if depth not in ("quick", "standard", "deep"):
-        raise HTTPException(status_code=422, detail="depth must be quick, standard, or deep")
+    if depth not in ("quick", "standard", "deep", "exhaustive"):
+        raise HTTPException(status_code=422, detail="depth must be quick, standard, deep, or exhaustive")
 
     # Generate session_id upfront so we can return it immediately
     research_session_id = datetime.now().strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:6]
 
-    def _run():
-        try:
-            from dotenv import load_dotenv
-            load_dotenv(PROJECT_ROOT / ".env")
-        except ImportError:
-            pass
-        from tools.research.orchestrator import run_research
-        run_research(query, depth, session_id=research_session_id, museum_id=museum_id)
+    import subprocess
+    import sys
 
-    t = threading.Thread(target=_run, daemon=True)
-    t.start()
+    log_dir = PROJECT_ROOT / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    subprocess.Popen(
+        [
+            sys.executable, "-m", "tools.research.research_runner",
+            "--query", query,
+            "--depth", depth,
+            "--session-id", research_session_id,
+            "--museum-id", str(museum_id) if museum_id else "",
+        ],
+        cwd=str(PROJECT_ROOT),
+        start_new_session=True,
+        stdout=open(log_dir / "research.log", "a"),
+        stderr=subprocess.STDOUT,
+    )
 
     return {"session_id": research_session_id, "status": "started", "query": query, "depth": depth}
 

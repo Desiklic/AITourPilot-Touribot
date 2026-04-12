@@ -117,3 +117,4 @@
  GET /pipeline 200 in 107ms (compile: 15ms, render: 93ms)
  GET /contacts 200 in 55ms (compile: 26ms, render: 28ms)
 ✓ Compiled in 147ms
+ GET /chat 200 in 716ms (compile: 670ms, render: 46ms)

@@ -147,6 +147,16 @@ def _build_tier1_context() -> str:
     if pipeline_summary:
         parts.append(f"\n---\n\n## Current Pipeline State\n\n{pipeline_summary}")
 
+    # Contact & data awareness — tell Touri what data it has access to
+    parts.append(
+        "\n## Your Data Access\n"
+        "You have direct access to the CRM database (data/leads.db) with museums, contacts, "
+        "and interactions. You can also use the `list_files` and `read_file` tools to read "
+        "files from configured project folders (Business Wiki, Marketing Materials, Development Docs). "
+        "When asked about contacts, pipeline status, or museum data, query your database — "
+        "do NOT ask the user to paste data you already have."
+    )
+
     # Top 5 global strategic memories by importance
     top_memories = _get_top_global_memories(limit=5, min_importance=7)
     if top_memories:

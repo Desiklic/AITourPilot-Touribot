@@ -16,13 +16,25 @@ console = Console()
 
 
 def pipeline_summary_text() -> str:
-    """Return a one-line pipeline summary for injection into chat context."""
+    """Return a pipeline summary for injection into chat context."""
     stats = get_pipeline_stats()
     total = stats["total"]
     if total == 0:
         return "Pipeline: empty (no museums imported yet)"
 
-    parts = [f"Pipeline: {total} museums total"]
+    # Count contacts
+    try:
+        from tools.leads.lead_db import init_db
+        conn = init_db()
+        contact_count = conn.execute("SELECT COUNT(*) FROM contacts").fetchone()[0]
+        conn.close()
+    except Exception:
+        contact_count = None
+
+    parts = [f"Pipeline: {total} museums"]
+    if contact_count:
+        parts[0] += f" with {contact_count} contacts (stored in data/leads.db)"
+
     for stage in sorted(stats["by_stage"].keys()):
         count = stats["by_stage"][stage]
         name = STAGE_NAMES.get(stage, f"Stage {stage}")

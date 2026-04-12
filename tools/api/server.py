@@ -1,4 +1,12 @@
 """FastAPI server for TouriBot dashboard chat."""
+# Load .env FIRST — before any module imports that check env vars
+from pathlib import Path
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).parent.parent.parent / ".env")
+except ImportError:
+    pass
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from tools.api.chat_handler import router as chat_router
